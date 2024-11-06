@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\DataflowBuilder\DataflowBuilder.csproj" />
+    <ProjectReference Include="..\..\src\DataflowBuilder\DataflowBuilder.csproj" />
   </ItemGroup>
 
   <ItemGroup>

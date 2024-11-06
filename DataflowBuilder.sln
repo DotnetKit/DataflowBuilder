@@ -5,7 +5,11 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataflowBuilder", "src\DataflowBuilder\DataflowBuilder.csproj", "{26D02178-DED3-4C32-9A3B-35F7C19BFCB9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataflowBuilder.Tests", "DataflowBuilder.Tests\DataflowBuilder.Tests.csproj", "{F0D4B6E2-3043-49E0-B1AE-69DFF9AF52B1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataflowBuilder.Tests", "tests\DataflowBuilder.Tests\DataflowBuilder.Tests.csproj", "{F0D4B6E2-3043-49E0-B1AE-69DFF9AF52B1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3A132607-295A-4DD6-B0F7-250FC245A735}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{991F717B-F134-482F-ACCD-1FC51E5F3706}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +28,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{26D02178-DED3-4C32-9A3B-35F7C19BFCB9} = {3A132607-295A-4DD6-B0F7-250FC245A735}
+		{F0D4B6E2-3043-49E0-B1AE-69DFF9AF52B1} = {991F717B-F134-482F-ACCD-1FC51E5F3706}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DC5EA6C1-DA8A-4816-B225-D023CB3FD160}

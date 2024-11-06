@@ -25,6 +25,33 @@ Or using the .NET CLI:
 dotnet add package DataflowBuilder
 ```
 
+### How it works
+
+- Define typed item source and build another blocks with fluent API builder
+- Build the pipeline
+- Send item
+
+blocks could transform, enrich, group each data (item) sent to the pipeline
+
+#### Sequential pipeline flow
+
+```mermaid
+flowchart LR
+    Source --> Process1[Enrich] --> Process2[Transform] --> Target
+```
+
+#### Pipeline flow with parallelization
+
+```mermaid
+flowchart LR
+    Source --> Process1[Enrich] --> Process2[Parallel processing] --> Store1
+    Process2[Parallel processing] --> Store2
+    Process2[Parallel processing] --> Store3
+    Store1 --> Target
+    Store2 --> Target
+    Store3 --> Target
+```
+
 ### Basic Usage
 
 Here is a simple example to get you started with `DataflowBuilder`.
@@ -40,11 +67,10 @@ public class Example
     public async Task RunPipeline()
     {
         var pipeline = DataFlowPipelineBuilder.FromSource<int>()
-            .Project(a => a * 2)
+            .Process(a => a * 2)
             .ToTarget(a =>
             {
                 Console.WriteLine(a);
-                return Task.CompletedTask;
             })
             .Build();
 
@@ -76,7 +102,6 @@ var pipeline = DataFlowPipelineBuilder.FromSource<int>()
     .ToTarget(batch =>
     {
         Console.WriteLine($"Batch received: {string.Join(",", batch)}");
-        return Task.CompletedTask;
     })
     .Build();
 
@@ -92,16 +117,54 @@ await pipeline.CompleteAsync();
 
 ```csharp
 var pipeline = DataFlowPipelineBuilder.FromSource<char[]>()
-    .ProjectMany(chars => chars.GroupBy(c => c).Select(g => g.Key))
+    .ProcessMany(chars => chars.GroupBy(c => c).Select(g => g.Key))
     .ToTarget(c =>
     {
         Console.Write(c);
-        return Task.CompletedTask;
     })
     .Build();
 
 await pipeline.SendAsync("hello world".ToCharArray());
 await pipeline.CompleteAsync();
+```
+
+#### Real world example with parallelization
+
+```mermaid
+flowchart TD
+    A[Sensor item] -->|Process| B(Enriched sensor)
+    B --> |batch| C(process each 1000 items with 3 // tasks )
+    C -->|processing task1| D[Bulk insert 1000 sensors]
+    C -->|processing task2| E[Bulk insert 1000 sensors]
+    C -->|processing task3| F[Bulk insert 1000 sensors]
+    D --> |task1 processed| G[Target log event]
+    E --> |task2 processed| G[Target ]
+    F --> |task3 processed| G[Publish notification]
+```
+
+```csharp
+
+//Configuration stage (DI, startup process, or specific lifetime )
+//Building sensor bulk insertion pipeline
+var pipeline = DataFlowPipelineBuilder.FromSource<SensorEntity>()
+    .Process(sensor => sensor.EnrichAsync())
+    .Batch(1000)
+    .ProcessAsync(async enrichedSensors => {
+       await mongoDBClient.BulkInsertAsync(enrichedSensors)
+    }, maxDegreeOfParallelism: 3)
+    .ToTargetAsync(enrichedSensors =>
+    {
+     await servicebusDomainTopic.PublishCreatedSensorsNotificationAsync();
+    })
+    .Build();
+
+//Execution stage (API or Event trigger )
+//it could be billion of sensors
+await foreach(var sensorPage in GetAllSensorsAsync())
+    {
+        await _pipeline.SendAsync(sensor);
+    }
+await _pipeline.CompleteAsync();
 ```
 
 ## Contributing

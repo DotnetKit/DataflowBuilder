@@ -1,6 +1,7 @@
-﻿using DataflowBuilder.Core.Pipeline;
+﻿
+using DataflowBuilder.Abstractions;
 
-namespace DataflowBuilder.Abstractions;
+namespace DataflowBuilder.Core;
 
 public class FluentBuilder<TExtension, TContext> : IFluentBuilder<TExtension, TContext>
 {

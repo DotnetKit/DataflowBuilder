@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using DataflowBuilder.Core.Pipeline;
 using FluentAssertions;
 
@@ -12,10 +13,10 @@ public class BuilderTests
         const string expected = "Hello World";
         var target = string.Empty;
         var pipeline = DataFlowPipelineBuilder.FromSource<string>()
-            .ToTarget(a =>
+            .ToTargetAsync(item =>
             {
-                target = a;
-                return Task.FromResult(a);
+                target = item;
+                return Task.CompletedTask;
             }).Build();
 
         await pipeline.SendAsync(expected);
@@ -31,10 +32,10 @@ public class BuilderTests
         var target = string.Empty;
         var pipeline = DataFlowPipelineBuilder.FromSource<string>()
             .Batch(2)
-            .ToTarget(a =>
+            .ToTargetAsync(items =>
             {
-                target = string.Concat(a);
-                return Task.FromResult(a);
+                target = string.Concat(items);
+                return Task.CompletedTask;
             })
 
             .Build();
@@ -54,11 +55,11 @@ public class BuilderTests
         var target = string.Empty.Split();
 
         var pipeline = DataFlowPipelineBuilder.FromSource<string>()
-            .Project(a => a.Split())
-            .ToTarget(a =>
+            .Process(item => item.Split())
+            .ToTargetAsync(items =>
             {
-                target = a;
-                return Task.FromResult(a);
+                target = items;
+                return Task.CompletedTask;
             })
 
             .Build();
@@ -78,11 +79,11 @@ public class BuilderTests
 
         var pipeline = DataFlowPipelineBuilder.FromSource<string>()
             .Batch(2)
-            .Project(a => string.Concat(a))
-            .ToTarget(a =>
+            .Process(items => string.Concat(items))
+            .ToTargetAsync(item =>
             {
-                result = a;
-                return Task.FromResult(a);
+                result = item;
+                return Task.CompletedTask;
             })
 
             .Build();
@@ -102,11 +103,11 @@ public class BuilderTests
         var result = string.Empty;
 
         var pipeline = DataFlowPipelineBuilder.FromSource<char[]>()
-            .ProjectMany(p => p)
-            .ToTarget(a =>
+            .ProcessMany(items => items)
+            .ToTargetAsync(item =>
             {
-                result = result + a;
-                return Task.FromResult(a);
+                result = result + item;
+                return Task.CompletedTask;
             }).Build();
 
         await pipeline.SendAsync("HelloWorld".ToArray());
@@ -123,17 +124,17 @@ public class BuilderTests
         int expected = -1;
         int result = -1;
         var pipeline = DataFlowPipelineBuilder.FromSource<int[]>()
-            .ProjectMany(a => a)
-            .ToTarget(a =>
+            .ProcessMany(items => items)
+            .ToTargetAsync(item =>
             {
-                result = result + a;
-                _ = result / a;
-                return Task.FromResult(a);
+                result = result + item;
+                _ = result / item;
+                return Task.CompletedTask;
             }).Build();
 
         await pipeline.SendAsync(input);
 
-        Func<Task> func = async () => await pipeline.CompleteAsync();
+        Func<Task> func = pipeline.CompleteAsync;
         await func.Should().ThrowAsync<DivideByZeroException>();
         result.Should().Be(expected);
     }
@@ -145,17 +146,17 @@ public class BuilderTests
         int expected = input.Sum();
         int result = 0;
         var pipeline = DataFlowPipelineBuilder.FromSource<int[]>()
-            .ProjectMany(a => a)
-            .ToTarget(a =>
+            .ProcessMany(items => items)
+            .ToTargetAsync(item =>
             {
-                result = result + a;
-                _ = result / a;
-                return Task.FromResult(a);
+                result = result + item;
+                _ = result / item;
+                return Task.CompletedTask;
             }).Build();
 
         await pipeline.SendAsync(input);
 
-        Func<Task> func = async () => await pipeline.CompleteAsync();
+        Func<Task> func = pipeline.CompleteAsync;
         await func.Should().ThrowAsync<DivideByZeroException>();
         result.Should().Be(expected);
     }
@@ -169,12 +170,12 @@ public class BuilderTests
 
         var pipeline = DataFlowPipelineBuilder
             .FromSource<char[]>()
-            .ProjectMany(a => a.GroupBy(p => p).Select(g => g.ToList()))
-            .ProjectMany(a => a.GroupByRange(3))
-            .ToTarget(a =>
+            .ProcessMany(items => items.GroupBy(p => p).Select(g => g.ToList()))
+            .ProcessMany(items => items.GroupByRange(3))
+            .ToTargetAsync(items =>
             {
-                result = result + string.Join("", a) + "-";
-                return Task.FromResult(a);
+                result = result + string.Join("", items) + "-";
+                return Task.CompletedTask;
             })
             .Build();
 
@@ -183,5 +184,103 @@ public class BuilderTests
         await pipeline.CompleteAsync();
 
         result.Should().Be(expected);
+    }
+
+    [TestMethod]
+    public async Task Should_Build_Pipeline_With_Target_Parallelized_Tasks()
+    {
+        //simulate a slow target with 100ms delay per item
+        var expected = "1111-2222-3333-4444-5555-6666-7777-8888-9999";
+        var result = new ConcurrentQueue<string>();
+
+        var concurrentTasks = 0;
+        var maxConcurrentTasks = 0;
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<string>()
+            .Process(item => item)
+            .ToTargetAsync(async item =>
+            {
+
+                try
+                {
+                    var current = Interlocked.Increment(ref concurrentTasks);
+                    if (current >= maxConcurrentTasks)
+                    {
+                        maxConcurrentTasks = current;
+                    }
+                    result.Enqueue(item);
+                    await Task.Delay(100);
+
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref concurrentTasks);
+                }
+
+            }, maxDegreeOfParallelism: 2)
+            .Build();
+
+        foreach (var segment in expected.Split("-"))
+        {
+            await pipeline.SendAsync(segment);
+        }
+        await pipeline.CompleteAsync();
+
+        result.ToList().Count.Should().Be(9);
+        expected.Split("-").Should().BeEquivalentTo(result.ToList());
+
+        maxConcurrentTasks.Should().Be(2);
+        concurrentTasks.Should().Be(0);
+    }
+
+    [TestMethod]
+    public async Task Should_Build_Pipeline_With_Project_Parallelized_Tasks()
+    {
+        //simulate a slow projection with 100ms delay per item
+        var expected = "1111-2222-3333-4444-5555-6666-7777-8888-9999";
+        var result = new ConcurrentQueue<string>();
+
+        var concurrentTasks = 0;
+        var maxConcurrentTasks = 0;
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<string>()
+            .ProcessAsync(async item =>
+            {
+
+                try
+                {
+                    var current = Interlocked.Increment(ref concurrentTasks);
+                    if (current >= maxConcurrentTasks)
+                    {
+                        maxConcurrentTasks = current;
+                    }
+                    await Task.Delay(100);
+                    return item;
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref concurrentTasks);
+                }
+            }, maxDegreeOfParallelism: 2)
+            .ToTargetAsync(async item =>
+            {
+                await Task.Delay(100);
+                result.Enqueue(item);
+            })
+            .Build();
+
+        foreach (var segment in expected.Split("-"))
+        {
+            await pipeline.SendAsync(segment);
+        }
+        await pipeline.CompleteAsync();
+
+        result.ToList().Count.Should().Be(9);
+        expected.Split("-").Should().BeEquivalentTo(result.ToList());
+
+        maxConcurrentTasks.Should().Be(2);
+        concurrentTasks.Should().Be(0);
     }
 }

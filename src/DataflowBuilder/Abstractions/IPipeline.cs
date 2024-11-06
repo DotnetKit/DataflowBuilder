@@ -1,9 +1,8 @@
-﻿namespace DataflowBuilder.Core.Pipeline
-{
-    public interface IPipeline<TSource>
-    {
-        Task CompleteAsync();
+﻿namespace DataflowBuilder.Abstractions;
 
-        Task SendAsync(TSource dataItem, CancellationToken cancellationToken = default);
-    }
+public interface IPipeline<TSource>
+{
+    Task CompleteAsync();
+
+    Task SendAsync(TSource dataItem, CancellationToken cancellationToken = default);
 }

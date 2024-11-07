@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -18,7 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DataflowBuilder\DotnetKit.DotnetKit.DataflowBuilder.csproj" />
+    <ProjectReference Include="..\..\src\DataflowBuilder\DotnetKit.DataflowBuilder.csproj" />
+    <ProjectReference Include="..\..\src\DotnetKit.DataflowBuilder\DotnetKit.DataflowBuilder.csproj" />
   </ItemGroup>
 
   <ItemGroup>

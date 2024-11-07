@@ -30,7 +30,7 @@ jobs:
       # Setup github packaged feed
       - name: dotnet nuget add source
         env:
-          USERNAME: Evodim
+          USERNAME: DotnetKit
         run: |
           dotnet nuget add source --username medevod --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github '${{ env.GITHUB_ARTIFACTS_FEED_URL }}'
 

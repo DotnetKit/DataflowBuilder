@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
 env:
-  GITHUB_ARTIFACTS_FEED_URL: https://nuget.pkg.github.com/evodim/index.json
+  GITHUB_ARTIFACTS_FEED_URL: https://nuget.pkg.github.com/dotnetkit/index.json
   BUILD_CONFIGURATION: "Release" # set this mto the appropriate build configuration
   DOTNET_VERSION: "8.x"
   MinVerMinimumMajorMinor: "1.0"

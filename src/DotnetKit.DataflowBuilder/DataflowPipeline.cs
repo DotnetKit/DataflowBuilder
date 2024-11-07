@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks.Dataflow;
 using DotnetKit.DataflowBuilder.Abstractions;
 
-namespace DotnetKit.DataflowBuilder.Core.Pipeline;
+namespace DotnetKit.DataflowBuilder;
 
 public class DataflowPipeline<TSource> : IPipeline<TSource>
 {

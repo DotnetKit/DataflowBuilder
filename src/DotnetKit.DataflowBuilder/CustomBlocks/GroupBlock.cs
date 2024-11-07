@@ -1,7 +1,7 @@
-﻿using DataflowBuilder.Abstractions;
+﻿using DotnetKit.DataflowBuilder.Abstractions;
 using System.Threading.Tasks.Dataflow;
 
-namespace DataflowBuilder.CustomBlocks;
+namespace DotnetKit.DataflowBuilder.CustomBlocks;
 
 public class GroupBlock<TGroupKey, TInput> : BasePropagatorBlock<TInput, TInput[]>
 {

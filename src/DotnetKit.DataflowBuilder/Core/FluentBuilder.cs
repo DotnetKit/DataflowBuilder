@@ -1,7 +1,7 @@
 ﻿
-using DataflowBuilder.Abstractions;
+using DotnetKit.DataflowBuilder.Abstractions;
 
-namespace DataflowBuilder.Core;
+namespace DotnetKit.DataflowBuilder.Core;
 
 public class FluentBuilder<TExtension, TContext> : IFluentBuilder<TExtension, TContext>
 {

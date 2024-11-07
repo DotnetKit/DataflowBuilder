@@ -1,11 +1,12 @@
 using System.Collections.Concurrent;
-using DataflowBuilder.Core.Pipeline;
+using DotnetKit.DataflowBuilder;
+using DotnetKit.DataflowBuilder.Extensions;
 using FluentAssertions;
 
-namespace DataflowBuilder.Tests;
+namespace DataflowBuilder.UnitTests;
 
 [TestClass]
-public class BuilderTests
+public class DataflowBuilderTests
 {
     [TestMethod]
     public async Task Should_Build_Pipeline_With_Source_And_Target()

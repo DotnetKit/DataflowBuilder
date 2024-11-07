@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks.Dataflow;
 
-namespace DataflowBuilder.Abstractions;
+namespace DotnetKit.DataflowBuilder.Abstractions;
 
 public interface IPipelineBuilder<TSource> : IPipelineBuilder
 {

@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks.Dataflow;
-using DataflowBuilder.Abstractions;
+using DotnetKit.DataflowBuilder.Abstractions;
 
-namespace DataflowBuilder.Core.Pipeline;
+namespace DotnetKit.DataflowBuilder;
 
 public class DataflowPipeline<TSource> : IPipeline<TSource>
 {
@@ -10,11 +10,8 @@ public class DataflowPipeline<TSource> : IPipeline<TSource>
 
     public DataflowPipeline(ITargetBlock<TSource> sourceBlock, IDataflowBlock destinationBlock)
     {
-        ArgumentNullException.ThrowIfNull(sourceBlock, nameof(sourceBlock));
-        ArgumentNullException.ThrowIfNull(destinationBlock, nameof(destinationBlock));
-
-        _sourceBlock = sourceBlock;
-        _destinationBlock = destinationBlock;
+        _sourceBlock = sourceBlock ?? throw new ArgumentNullException(nameof(sourceBlock));
+        _destinationBlock = destinationBlock ?? throw new ArgumentNullException(nameof(destinationBlock));
     }
 
     public async Task SendAsync(TSource dataItem, CancellationToken cancellationToken = default)

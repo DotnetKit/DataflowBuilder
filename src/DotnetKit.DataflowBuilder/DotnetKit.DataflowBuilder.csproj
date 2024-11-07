@@ -11,7 +11,7 @@
     <Product>DotnetKit</Product>
     <Authors>Evodim</Authors>
     <Copyright>Evodim Solutions - 2024</Copyright>
-    <PackageId>DataflowBuilder</PackageId>
+    <PackageId>DotnetKit.DataflowBuilder</PackageId>
     <PackageLicenseExpression></PackageLicenseExpression>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>

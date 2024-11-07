@@ -1,4 +1,4 @@
-﻿namespace DataflowBuilder.Abstractions;
+﻿namespace DotnetKit.DataflowBuilder.Abstractions;
 
 public interface IPipeline<TSource>
 {

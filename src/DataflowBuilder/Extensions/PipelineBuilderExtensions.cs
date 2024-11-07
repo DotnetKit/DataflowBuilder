@@ -1,8 +1,8 @@
-﻿using DataflowBuilder.Abstractions;
-using DataflowBuilder.CustomBlocks;
+﻿using DotnetKit.DataflowBuilder.Abstractions;
+using DotnetKit.DataflowBuilder.CustomBlocks;
 using System.Threading.Tasks.Dataflow;
 
-namespace DataflowBuilder.Core.Pipeline;
+namespace DotnetKit.DataflowBuilder.Core.Pipeline;
 
 public static class PipelineBuilderExtensions
 {

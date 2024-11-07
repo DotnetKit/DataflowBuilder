@@ -1,4 +1,4 @@
-﻿namespace DataflowBuilder.Core.Pipeline;
+﻿namespace DotnetKit.DataflowBuilder.Core.Pipeline;
 
 public static class EnumerableExtensions
 {

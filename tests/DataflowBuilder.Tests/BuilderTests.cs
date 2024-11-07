@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
-using DataflowBuilder.Core.Pipeline;
+using DotnetKit.DataflowBuilder.Core.Pipeline;
 using FluentAssertions;
 
-namespace DataflowBuilder.Tests;
+namespace DotnetKit.DataflowBuilder.Tests;
 
 [TestClass]
 public class BuilderTests

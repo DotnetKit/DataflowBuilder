@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks.Dataflow;
 
-namespace DataflowBuilder.Abstractions;
+namespace DotnetKit.DataflowBuilder.Abstractions;
 
 /// <summary>
 /// PropagatorBlock base implementation used to create any block as both target and source.

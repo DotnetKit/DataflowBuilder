@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataflowBuilder", "src\DataflowBuilder\DataflowBuilder.csproj", "{26D02178-DED3-4C32-9A3B-35F7C19BFCB9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotnetKit.DataflowBuilder", "src\DataflowBuilder\DotnetKit.DataflowBuilder.csproj", "{26D02178-DED3-4C32-9A3B-35F7C19BFCB9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataflowBuilder.Tests", "tests\DataflowBuilder.Tests\DataflowBuilder.Tests.csproj", "{F0D4B6E2-3043-49E0-B1AE-69DFF9AF52B1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotnetKit.DataflowBuilder.Tests", "tests\DataflowBuilder.Tests\DotnetKit.DataflowBuilder.Tests.csproj", "{F0D4B6E2-3043-49E0-B1AE-69DFF9AF52B1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3A132607-295A-4DD6-B0F7-250FC245A735}"
 EndProject

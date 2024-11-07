@@ -1,8 +1,7 @@
-﻿using DataflowBuilder.Abstractions;
-using System.Runtime.CompilerServices;
+﻿using DotnetKit.DataflowBuilder.Abstractions; 
 using System.Threading.Tasks.Dataflow;
 
-namespace DataflowBuilder.Core.Pipeline;
+namespace DotnetKit.DataflowBuilder.Core.Pipeline;
 
 public static class DataFlowPipelineBuilder
 {
@@ -119,6 +118,7 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
             CancellationToken = CancellationToken
         });
     }
+
     public IPropagatorBlock<TInput, TOutput> CreateTransformBlock<TInput, TOutput>(
      Func<TInput, TOutput> propagatorFunc,
      int maxDegreeOfParallelism)
@@ -130,6 +130,7 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
             CancellationToken = CancellationToken
         });
     }
+
     public IPropagatorBlock<TInput, TOutput> CreateAsyncTransformBlock<TInput, TOutput>(
         Func<TInput, Task<TOutput>> propagatorFunc,
         int maxDegreeOfParallelism)
@@ -143,7 +144,6 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
                 CancellationToken = CancellationToken
             });
     }
-
 
     public IPropagatorBlock<TInput, TOutput> CreateTransformManyBlock<TInput, TOutput>(
     Func<TInput, IEnumerable<TOutput>> propagatorFunc,
@@ -186,6 +186,7 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
             }
         };
     }
+
     protected Func<TInput, Task<TOutput>> HandleAsyncFunction<TInput, TOutput>(Func<TInput, Task<TOutput>> asyncFunction)
     {
         return async (input) =>

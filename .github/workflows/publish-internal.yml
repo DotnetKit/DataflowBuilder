@@ -43,4 +43,4 @@ jobs:
 
       # Publish the package to Azure Artifacts
       - name: "dotnet publish"
-        run: dotnet nuget push --source github  --api-key  ${{ secrets.INTERNAL_PKG_NUGET_PAT }} src/DotnetKit.*/bin/Release/*.nupkg
+        run: dotnet nuget push --source github  --api-key  ${{ secrets.INTERNAL_PKG_NUGET_PAT }} src/DataflowBuilder/bin/Release/*.nupkg

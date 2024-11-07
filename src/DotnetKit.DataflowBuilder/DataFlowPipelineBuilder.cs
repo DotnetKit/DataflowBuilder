@@ -1,7 +1,8 @@
-﻿using DotnetKit.DataflowBuilder.Abstractions; 
+﻿using DotnetKit.DataflowBuilder.Abstractions;
+using DotnetKit.DataflowBuilder.Core;
 using System.Threading.Tasks.Dataflow;
 
-namespace DotnetKit.DataflowBuilder.Core.Pipeline;
+namespace DotnetKit.DataflowBuilder;
 
 public static class DataFlowPipelineBuilder
 {

@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>
+    <PackageIcon>dotnetkit.png</PackageIcon>
     <PackageIconUrl>https://evocdn.azureedge.net/images/128/dotnetkit.png</PackageIconUrl>
     <isPackable>true</isPackable>
     <Company>Evodim</Company>
@@ -34,5 +35,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="dotnetkit.png" Pack="true" PackagePath=""/>
   </ItemGroup>
 </Project>

@@ -1,5 +1,10 @@
 # DataflowBuilder
 
+![internal](https://github.com/dotnetkit/dataflowbuilder/actions/workflows/publish-internal.yml/badge.svg)
+![public](https://github.com/dotnetkit/dataflowbuilder/actions/workflows/publish-public.yml/badge.svg)
+
+**Dotnetkit.DataflowBuilder** ![Dotnetkit.DataflowBuilder](https://img.shields.io/nuget/v/Dotnetkit.DataflowBuilder)
+  
 ## Overview
 
 `DataflowBuilder` simplifies the creation of dataflow pipelines, making it easier to build, manage, and test complex data processing workflows. With its fluent API, you can quickly set up pipelines that handle various data processing tasks efficiently.

@@ -1,10 +1,10 @@
-﻿ 
+﻿
 namespace BookReaderExample
 {
     public class ReaderService
     {
-       
-        public Task<string> DownloadBook(string uri)
+
+        public Task<string> DownloadBookAsync(string uri)
         {
             Console.WriteLine("Downloading '{0}'...", uri);
 
@@ -55,10 +55,10 @@ namespace BookReaderExample
         // Prints the provided reversed words to the console.
         public void PrintReversedWords(string reversedWord)
         {
-          
+
             Console.WriteLine("Found reversed words {0}/{1}",
                reversedWord, new string(reversedWord.Reverse().ToArray()));
-         
+
         }
     }
 }

@@ -3,6 +3,7 @@ name: PR internal deployment
 on:
   pull_request:
     branches: [main]
+    paths: ["src/**"]
 env:
   GITHUB_ARTIFACTS_FEED_URL: https://nuget.pkg.github.com/dotnetkit/index.json
   BUILD_CONFIGURATION: "Release" # set this mto the appropriate build configuration

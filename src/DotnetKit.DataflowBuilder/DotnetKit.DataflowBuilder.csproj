@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>
+    <PackageIconUrl>https://evocdn.azureedge.net/images/128/dotnetkit.png</PackageIconUrl>
     <isPackable>true</isPackable>
     <Company>Evodim</Company>
     <Product>DotnetKit</Product>

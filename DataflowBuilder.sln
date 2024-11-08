@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{22EF893F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataflowBuilder.UnitTests", "tests\UnitTests\DataflowBuilder.UnitTests.csproj", "{2457D549-5932-4468-8ADA-85434BC53B8B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{C03295B9-2369-4B32-A5FC-5CC4374C3742}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookReaderExample", "examples\BookReaderExample\BookReaderExample.csproj", "{1A761F98-6D1D-4FA5-A9A8-BCA44E49FD67}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +29,10 @@ Global
 		{2457D549-5932-4468-8ADA-85434BC53B8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2457D549-5932-4468-8ADA-85434BC53B8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2457D549-5932-4468-8ADA-85434BC53B8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A761F98-6D1D-4FA5-A9A8-BCA44E49FD67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A761F98-6D1D-4FA5-A9A8-BCA44E49FD67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A761F98-6D1D-4FA5-A9A8-BCA44E49FD67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A761F98-6D1D-4FA5-A9A8-BCA44E49FD67}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -32,6 +40,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{0CD58CC2-00BD-4D73-92BB-3E5E5029073F} = {B365DA09-4DC2-49DD-82B2-D4E25875644C}
 		{2457D549-5932-4468-8ADA-85434BC53B8B} = {22EF893F-83EF-4121-B3E2-4BE866CF855C}
+		{1A761F98-6D1D-4FA5-A9A8-BCA44E49FD67} = {C03295B9-2369-4B32-A5FC-5CC4374C3742}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7DA82325-8D5F-4733-9FAA-B6C2A85A0AED}

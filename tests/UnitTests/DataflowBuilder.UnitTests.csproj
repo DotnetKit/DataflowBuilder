@@ -18,7 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DataflowBuilder\DotnetKit.DataflowBuilder.csproj" />
     <ProjectReference Include="..\..\src\DotnetKit.DataflowBuilder\DotnetKit.DataflowBuilder.csproj" />
   </ItemGroup>
 

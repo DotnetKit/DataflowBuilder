@@ -2,9 +2,8 @@
 
 ![internal](https://github.com/dotnetkit/dataflowbuilder/actions/workflows/publish-internal.yml/badge.svg)
 ![public](https://github.com/dotnetkit/dataflowbuilder/actions/workflows/publish-public.yml/badge.svg)
+![Dotnetkit.DataflowBuilder](https://img.shields.io/nuget/v/Dotnetkit.DataflowBuilder)
 
-**Dotnetkit.DataflowBuilder** ![Dotnetkit.DataflowBuilder](https://img.shields.io/nuget/v/Dotnetkit.DataflowBuilder)
-  
 ## Overview
 
 `DataflowBuilder` simplifies the creation of dataflow pipelines, making it easier to build, manage, and test complex data processing workflows. With its fluent API, you can quickly set up pipelines that handle various data processing tasks efficiently.
@@ -18,16 +17,17 @@ This is especially useful for CPU-intensive or I/O-bound operations where tasks 
 
 ### Installation
 
-To use `DataflowBuilder` in your project, install it via NuGet Package Manager (coming soon)
+To use `DataflowBuilder` in your project, install it via NuGet Package Manager
+[DotnetKit.DataflowBuilder NUGET](https://www.nuget.org/packages/DotnetKit.DataflowBuilder)
 
 ```bash
-Install-Package DataflowBuilder
+Install-Package DotnetKit.DataflowBuilder
 ```
 
 Or using the .NET CLI:
 
 ```bash
-dotnet add package DataflowBuilder
+dotnet add package DotnetKit.DataflowBuilder
 ```
 
 ### How it works

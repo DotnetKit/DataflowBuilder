@@ -38,25 +38,6 @@ dotnet add package DotnetKit.DataflowBuilder
 
 blocks could transform, enrich, group each data (item) sent to the pipeline
 
-#### Sequential pipeline flow
-
-```mermaid
-flowchart LR
-    Source --> Process1[Enrich] --> Process2[Transform] --> Target
-```
-
-#### Pipeline flow with parallelization
-
-```mermaid
-flowchart LR
-    Source --> Process1[Enrich] --> Process2[Parallel processing] --> Store1
-    Process2[Parallel processing] --> Store2
-    Process2[Parallel processing] --> Store3
-    Store1 --> Target
-    Store2 --> Target
-    Store3 --> Target
-```
-
 ### Basic Usage
 
 Here is a simple example to get you started with `DataflowBuilder`.
@@ -101,7 +82,7 @@ public async Task RunPipeline()
 
 ### Advanced Usage
 
-`DataflowBuilder` supports advanced operations like batching and grouping.
+`DataflowBuilder` supports advanced operations like batching and grouping and supports async tasks as well.
 
 #### Batching
 
@@ -136,50 +117,3 @@ var pipeline = DataFlowPipelineBuilder.FromSource<char[]>()
 await pipeline.SendAsync("hello world".ToCharArray());
 await pipeline.CompleteAsync();
 ```
-
-#### Real world example with parallelization
-
-```mermaid
-flowchart TD
-    A[Sensor item] -->|Process| B(Enriched sensor)
-    B --> |batch| C(process each 1000 items with 3 // tasks )
-    C -->|processing task1| D[Bulk insert 1000 sensors]
-    C -->|processing task2| E[Bulk insert 1000 sensors]
-    C -->|processing task3| F[Bulk insert 1000 sensors]
-    D --> |task1 processed| G[Target log event]
-    E --> |task2 processed| G[Target ]
-    F --> |task3 processed| G[Publish notification]
-```
-
-```csharp
-
-//Configuration stage (DI, startup process, or specific lifetime )
-//Building sensor bulk insertion pipeline
-var pipeline = DataFlowPipelineBuilder.FromSource<SensorEntity>()
-    .Process(sensor => sensor.EnrichAsync())
-    .Batch(1000)
-    .ProcessAsync(async enrichedSensors => {
-       await mongoDBClient.BulkInsertAsync(enrichedSensors)
-    }, maxDegreeOfParallelism: 3)
-    .ToTargetAsync(enrichedSensors =>
-    {
-     await servicebusDomainTopic.PublishCreatedSensorsNotificationAsync();
-    })
-    .Build();
-
-//Execution stage (API or Event trigger )
-//it could be billion of sensors
-await foreach(var sensorPage in GetAllSensorsAsync())
-    {
-        await _pipeline.SendAsync(sensor);
-    }
-await _pipeline.CompleteAsync();
-```
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
-## License
-
-This project is licensed under the MIT License.

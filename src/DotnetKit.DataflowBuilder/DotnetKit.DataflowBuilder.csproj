@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>
+    <PackageIcon>dotnetkit.png</PackageIcon>
+    <PackageIconUrl>https://evocdn.azureedge.net/images/128/dotnetkit.png</PackageIconUrl>
     <isPackable>true</isPackable>
     <Company>Evodim</Company>
     <Product>DotnetKit</Product>
@@ -19,7 +21,7 @@
     <PackageProjectUrl>https://github.com/DotnetKit/DataflowBuilder</PackageProjectUrl>
     <PackageTags>Dataflow, TPL, Builder, Fluent API, Data</PackageTags>
     <Description>Dataflow builder package to build fast and efficient Dataflow pipelines</Description>
-    <Title>DotnetKit DataflowBuilder</Title>
+    <Title>DataflowBuilder</Title>
   </PropertyGroup>
   <PropertyGroup>
     <MinVerTagPrefix>v</MinVerTagPrefix>
@@ -33,5 +35,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="dotnetkit.png" Pack="true" PackagePath=""/>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 </Project>

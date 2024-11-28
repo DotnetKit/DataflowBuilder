@@ -1,5 +1,9 @@
 # DataflowBuilder
 
+![internal](https://github.com/dotnetkit/dataflowbuilder/actions/workflows/publish-internal.yml/badge.svg)
+![public](https://github.com/dotnetkit/dataflowbuilder/actions/workflows/publish-public.yml/badge.svg)
+![Dotnetkit.DataflowBuilder](https://img.shields.io/nuget/v/Dotnetkit.DataflowBuilder)
+
 ## Overview
 
 `DataflowBuilder` simplifies the creation of dataflow pipelines, making it easier to build, manage, and test complex data processing workflows. With its fluent API, you can quickly set up pipelines that handle various data processing tasks efficiently.
@@ -13,16 +17,17 @@ This is especially useful for CPU-intensive or I/O-bound operations where tasks 
 
 ### Installation
 
-To use `DataflowBuilder` in your project, install it via NuGet Package Manager (coming soon)
+To use `DataflowBuilder` in your project, install it via NuGet Package Manager
+[DotnetKit.DataflowBuilder NUGET](https://www.nuget.org/packages/DotnetKit.DataflowBuilder)
 
 ```bash
-Install-Package DataflowBuilder
+Install-Package DotnetKit.DataflowBuilder
 ```
 
 Or using the .NET CLI:
 
 ```bash
-dotnet add package DataflowBuilder
+dotnet add package DotnetKit.DataflowBuilder
 ```
 
 ### How it works
@@ -33,25 +38,6 @@ dotnet add package DataflowBuilder
 
 blocks could transform, enrich, group each data (item) sent to the pipeline
 
-#### Sequential pipeline flow
-
-```mermaid
-flowchart LR
-    Source --> Process1[Enrich] --> Process2[Transform] --> Target
-```
-
-#### Pipeline flow with parallelization
-
-```mermaid
-flowchart LR
-    Source --> Process1[Enrich] --> Process2[Parallel processing] --> Store1
-    Process2[Parallel processing] --> Store2
-    Process2[Parallel processing] --> Store3
-    Store1 --> Target
-    Store2 --> Target
-    Store3 --> Target
-```
-
 ### Basic Usage
 
 Here is a simple example to get you started with `DataflowBuilder`.
@@ -59,40 +45,44 @@ Here is a simple example to get you started with `DataflowBuilder`.
 **Create a Pipeline:**
 
 ```csharp
-using DataflowBuilder.Core.Pipeline;
+using DotnetKit.DataflowBuilder;
 using System.Threading.Tasks;
 
-public class Example
+public async Task RunPipeline()
 {
-    public async Task RunPipeline()
-    {
-        var pipeline = DataFlowPipelineBuilder.FromSource<int>()
-            .Process(a => a * 2)
-            .ToTarget(a =>
-            {
-                Console.WriteLine(a);
-            })
-            .Build();
+    // build the pipeline
+    var pipeline = DataFlowPipelineBuilder.FromSource<int>()
+        .Process(a => a * 2)
+        .ToTarget(a =>
+        {
+            Console.WriteLine(a);
+        })
+        .Build();
 
-        await pipeline.SendAsync(10);
-        await pipeline.CompleteAsync();
-    }
+    // run the pipeline
+    for(var i=1;i<=5;i++)
+        {
+            await pipeline.SendAsync(1);
+        }
+
+    await pipeline.CompleteAsync();
 }
+
 ```
 
-**Run the Pipeline:**
+**Result:**
 
-```csharp
-public static async Task Main(string[] args)
-{
-    var example = new Example();
-    await example.RunPipeline();
-}
+```bash
+2
+4
+6
+8
+10
 ```
 
 ### Advanced Usage
 
-`DataflowBuilder` supports advanced operations like batching and grouping.
+`DataflowBuilder` supports advanced operations like batching and grouping and supports async tasks as well.
 
 #### Batching
 
@@ -127,50 +117,3 @@ var pipeline = DataFlowPipelineBuilder.FromSource<char[]>()
 await pipeline.SendAsync("hello world".ToCharArray());
 await pipeline.CompleteAsync();
 ```
-
-#### Real world example with parallelization
-
-```mermaid
-flowchart TD
-    A[Sensor item] -->|Process| B(Enriched sensor)
-    B --> |batch| C(process each 1000 items with 3 // tasks )
-    C -->|processing task1| D[Bulk insert 1000 sensors]
-    C -->|processing task2| E[Bulk insert 1000 sensors]
-    C -->|processing task3| F[Bulk insert 1000 sensors]
-    D --> |task1 processed| G[Target log event]
-    E --> |task2 processed| G[Target ]
-    F --> |task3 processed| G[Publish notification]
-```
-
-```csharp
-
-//Configuration stage (DI, startup process, or specific lifetime )
-//Building sensor bulk insertion pipeline
-var pipeline = DataFlowPipelineBuilder.FromSource<SensorEntity>()
-    .Process(sensor => sensor.EnrichAsync())
-    .Batch(1000)
-    .ProcessAsync(async enrichedSensors => {
-       await mongoDBClient.BulkInsertAsync(enrichedSensors)
-    }, maxDegreeOfParallelism: 3)
-    .ToTargetAsync(enrichedSensors =>
-    {
-     await servicebusDomainTopic.PublishCreatedSensorsNotificationAsync();
-    })
-    .Build();
-
-//Execution stage (API or Event trigger )
-//it could be billion of sensors
-await foreach(var sensorPage in GetAllSensorsAsync())
-    {
-        await _pipeline.SendAsync(sensor);
-    }
-await _pipeline.CompleteAsync();
-```
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
-## License
-
-This project is licensed under the MIT License.

@@ -10,7 +10,7 @@
     <PackageIconUrl>https://evocdn.azureedge.net/images/128/dotnetkit.png</PackageIconUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageId>DotnetKit.DataflowBuilder</PackageId>
-    <PackageLicenseExpression>MIT License</PackageLicenseExpression>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/DotnetKit/DataflowBuilder</PackageProjectUrl>
     <PackageTags>Dataflow, Task Parallel Library, TPL, Builder, Fluent API, Data processing</PackageTags>

@@ -3,7 +3,7 @@
 public static class EnumerableExtensions
 {
     /// <summary>
-    /// return batched IEnumerable List of TSource by given batchSize
+    /// Return batched IEnumerable List of TSource by given batchSize
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <param name="source"></param>
@@ -11,25 +11,21 @@ public static class EnumerableExtensions
     /// <returns></returns>
     public static IEnumerable<IEnumerable<TSource>> GroupByRange<TSource>(this IEnumerable<TSource> source, int rangeSize)
     {
-        if (source.Count() <= rangeSize)
-        {
-            yield return source.ToList();
-        }
-        else
-        {
-            var buffer = new List<TSource>();
+        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (rangeSize <= 0) throw new ArgumentOutOfRangeException(nameof(rangeSize));
 
-            foreach (var item in source)
+        using (var enumerator = source.GetEnumerator())
+        {
+            while (enumerator.MoveNext())
             {
-                buffer.Add(item);
-
-                if (buffer.Count >= rangeSize)
+                var batch = new List<TSource>(rangeSize);
+                do
                 {
-                    yield return buffer.ToList();
-                    buffer.Clear();
+                    batch.Add(enumerator.Current);
                 }
+                while (batch.Count < rangeSize && enumerator.MoveNext());
+                yield return batch;
             }
-            yield return buffer.ToList();
         }
     }
 }

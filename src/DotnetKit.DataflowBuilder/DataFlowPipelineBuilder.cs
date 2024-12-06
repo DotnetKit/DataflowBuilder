@@ -1,16 +1,16 @@
-﻿using DotnetKit.DataflowBuilder.Abstractions;
+﻿using System.Threading.Tasks.Dataflow;
+using DotnetKit.DataflowBuilder.Abstractions;
 using DotnetKit.DataflowBuilder.Core;
-using System.Threading.Tasks.Dataflow;
 
 namespace DotnetKit.DataflowBuilder;
 
 public static class DataFlowPipelineBuilder
 {
-    public static IFluentBuilder<ISourceBlock<TSource>, IPipelineBuilder<TSource>> FromSource<TSource>(CancellationToken cancellationToken = default)
+    public static IFluentBuilder<ISourceBlock<TSource>, IPipelineBuilder<TSource>> FromSource<TSource>(int sourceBufferSize = 1, CancellationToken cancellationToken = default)
     {
         var initialBlock = new BufferBlock<TSource>(new DataflowBlockOptions()
         {
-            BoundedCapacity = 1,
+            BoundedCapacity = sourceBufferSize,
             CancellationToken = cancellationToken
         });
 
@@ -46,7 +46,7 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
         }
         else
         {
-            throw new System.Exception("Cannot link to a non-source block");
+            throw new Exception("Cannot link to a non-source block");
         }
         _blocks.Add(propagatorBlock);
     }
@@ -62,7 +62,7 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
         }
         else
         {
-            throw new System.Exception("Cannot link to a non-source block");
+            throw new Exception("Cannot link to a non-source block");
         }
         _blocks.Add(targetBlock);
     }

@@ -16,12 +16,71 @@ public static class DataFlowPipelineBuilder
 
         return new FluentBuilder<ISourceBlock<TSource>, IPipelineBuilder<TSource>>(new DataFlowPipelineBuilder<TSource>(initialBlock, cancellationToken));
     }
+
+    public static IFluentBuilder<ISourceBlock<Tuple<TSource1, TSource2>>, DataFlowPipelineBuilder<TSource1, TSource2>> FromSources<TSource1, TSource2>(int sourceBufferSize = 1, CancellationToken cancellationToken = default)
+    {
+        var initialBlock = new BufferBlock<TSource1>(new DataflowBlockOptions()
+        {
+            BoundedCapacity = sourceBufferSize,
+            CancellationToken = cancellationToken
+        });
+        var initialBlock2 = new BufferBlock<TSource2>(new DataflowBlockOptions()
+        {
+            BoundedCapacity = sourceBufferSize,
+            CancellationToken = cancellationToken
+        });
+
+        return new FluentBuilder<ISourceBlock<Tuple<TSource1, TSource2>>, DataFlowPipelineBuilder<TSource1, TSource2>>(new DataFlowPipelineBuilder<TSource1, TSource2>(initialBlock, initialBlock2, cancellationToken));
+    }
+}
+public interface IPipelineBuilder<TSource1, TSource2> : IPipelineBuilder<Tuple<TSource1, TSource2>>
+{
+    ISourceBlock<TSource1> SourceBlock1 { get; }
+    ISourceBlock<TSource2> SourceBlock2 { get; }
+    new IPipeline<TSource1, TSource2> Build();
+
 }
 
+public class DataFlowPipelineBuilder<TSource1, TSource2> : DataFlowPipelineBuilder<Tuple<TSource1, TSource2>>, IPipelineBuilder<TSource1, TSource2>
+{
+    public ISourceBlock<TSource1> SourceBlock1 { get; }
+    public ISourceBlock<TSource2> SourceBlock2 { get; }
+    public DataFlowPipelineBuilder(
+         ISourceBlock<TSource1> initialBlock1,
+         ISourceBlock<TSource2> initialBlock2,
+         CancellationToken cancellationToken) : base(new JoinBlock<TSource1, TSource2>(new GroupingDataflowBlockOptions()
+         {
+
+             Greedy = true,
+             CancellationToken = cancellationToken
+         }), cancellationToken)
+    {
+
+        SourceBlock1 = initialBlock1;
+        SourceBlock2 = initialBlock2;
+
+        if (SourceBlock is JoinBlock<TSource1, TSource2> joinBlock)
+        {
+            SourceBlock1.LinkTo(joinBlock.Target1, new DataflowLinkOptions()
+            {
+                PropagateCompletion = true
+            });
+            SourceBlock2.LinkTo(joinBlock.Target2, new DataflowLinkOptions()
+            {
+                PropagateCompletion = true
+            });
+        }
+    }
+
+    public new IPipeline<TSource1, TSource2> Build()
+    {
+        return new DataflowPipeline<TSource1, TSource2>(Blocks.First() as JoinBlock<TSource1, TSource2> ?? null!, Blocks.Last());
+    }
+}
 public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource>
 {
     public CancellationToken CancellationToken { get; }
-    private readonly List<IDataflowBlock> _blocks = new();
+    protected readonly List<IDataflowBlock> Blocks = new();
     public ISourceBlock<TSource> SourceBlock { get; }
 
     public DataFlowPipelineBuilder(IDataflowBlock initialBlock, CancellationToken cancellationToken)
@@ -31,13 +90,13 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
         {
             throw new InvalidCastException("initialBlock instance cloud not be casted to ISourceBlock<TSource>");
         }
-        _blocks.Add(initialBlock);
+        Blocks.Add(initialBlock);
         CancellationToken = cancellationToken;
     }
 
     public void AddPropagatorBlock<TInput, TOutput>(IPropagatorBlock<TInput, TOutput> propagatorBlock)
     {
-        if (_blocks.Last() is ISourceBlock<TInput> sourceBlock)
+        if (Blocks.Last() is ISourceBlock<TInput> sourceBlock)
         {
             sourceBlock.LinkTo(propagatorBlock, new DataflowLinkOptions()
             {
@@ -48,12 +107,12 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
         {
             throw new Exception("Cannot link to a non-source block");
         }
-        _blocks.Add(propagatorBlock);
+        Blocks.Add(propagatorBlock);
     }
 
     public void AddTargetBlock<TInput>(ITargetBlock<TInput> targetBlock)
     {
-        if (_blocks.Last() is ISourceBlock<TInput> sourceBlock)
+        if (Blocks.Last() is ISourceBlock<TInput> sourceBlock)
         {
             sourceBlock.LinkTo(targetBlock, new DataflowLinkOptions()
             {
@@ -64,12 +123,12 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
         {
             throw new Exception("Cannot link to a non-source block");
         }
-        _blocks.Add(targetBlock);
+        Blocks.Add(targetBlock);
     }
 
-    public IPipeline<TSource> Build()
+    public virtual IPipeline<TSource> Build()
     {
-        return new DataflowPipeline<TSource>(_blocks.First() as ITargetBlock<TSource> ?? null!, _blocks.Last());
+        return new DataflowPipeline<TSource>(Blocks.First() as ITargetBlock<TSource> ?? null!, Blocks.Last());
     }
 
     public IPropagatorBlock<TInput, TInput[]> CreateBatchBlock<TInput>(int batchSize)

@@ -13,6 +13,13 @@ One of the key features of DataflowBuilder is its support for parallel asynchron
 By leveraging dataflow blocks, you can process data concurrently, making efficient use of system resources and improving the performance of your applications.
 This is especially useful for CPU-intensive or I/O-bound operations where tasks can benefit from parallelism.
 
+## Features 
+
+- Type safe Builder
+- Process huge data effectively without memory leak
+- Implement any async or synchronous operations like access to database, api call or any cloud resource call
+- Multi-source extension to implement data streaming join
+
 ## Getting Started
 
 ### Installation
@@ -135,6 +142,34 @@ var pipeline = DataFlowPipelineBuilder.FromSource<char[]>()
 
 await pipeline.SendAsync("hello world".ToCharArray());
 await pipeline.CompleteAsync();
+```
+
+#### Multi-source pipeline (JoinBlock implementation)
+
+```csharp
+        var expected = new List<string>() { $"HelloWorld-10", $"PingPong-8" };
+
+        var result = new List<string>();
+        var pipeline = DataFlowPipelineBuilder.FromSources<string, int>()
+            .Process(items => $"{items.Item1}-{items.Item2}")
+            .ToTargetAsync(item =>
+            {
+                result.Add(item);
+                return Task.CompletedTask;
+            })
+
+            .Build();
+
+        //Order of sending is important for sources 
+        await pipeline.Send1Async("HelloWorld");
+        await pipeline.Send1Async("PingPong");
+
+        await pipeline.Send2Async("HelloWorld".Length);
+        await pipeline.Send2Async("PingPong".Length);
+
+        await pipeline.CompleteAsync();
+
+        result.Should().BeEquivalentTo(expected);
 ```
 
 #### Real world example with parallelization

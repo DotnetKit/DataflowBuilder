@@ -8,7 +8,6 @@ namespace DataflowBuilder.UnitTests;
 [TestClass]
 public class DataflowBuilderTests
 {
-    [TestMethod]
     public async Task Should_Build_Pipeline_With_Source_And_Target()
     {
         const string expected = "Hello World";
@@ -29,13 +28,13 @@ public class DataflowBuilderTests
     [TestMethod]
     public async Task Should_Build_Pipeline_With_Batching()
     {
-        const string expected = "HelloWorld";
-        var target = string.Empty;
+
+        var target = new List<string>();
         var pipeline = DataFlowPipelineBuilder.FromSource<string>()
             .Batch(2)
             .ToTargetAsync(items =>
             {
-                target = string.Concat(items);
+                target.Add(string.Concat(items));
                 return Task.CompletedTask;
             })
 
@@ -44,13 +43,17 @@ public class DataflowBuilderTests
         await pipeline.SendAsync("Hello");
         await pipeline.SendAsync("World");
 
+        await pipeline.SendAsync("Ping");
+        await pipeline.SendAsync("Pong");
+
         await pipeline.CompleteAsync();
 
-        target.Should().Be(expected);
+        target.First().Should().Be("HelloWorld");
+        target[1].Should().Be("PingPong");
     }
 
     [TestMethod]
-    public async Task Should_Build_Pipeline_With_Projection()
+    public async Task Should_Build_Pipeline_With_Processing_Block()
     {
         var expected = "HelloWorld".Split();
         var target = string.Empty.Split();
@@ -73,7 +76,7 @@ public class DataflowBuilderTests
     }
 
     [TestMethod]
-    public async Task Should_Build_Pipeline_With_Batching_And_Projection()
+    public async Task Should_Build_Pipeline_With_Batching_And_Processing_Blocks()
     {
         var expected = "HelloWorld";
         var result = string.Empty;
@@ -98,7 +101,7 @@ public class DataflowBuilderTests
     }
 
     [TestMethod]
-    public async Task Should_Build_Pipeline_With_ProjectMany()
+    public async Task Should_Build_Pipeline_With_Processing_Many_Block()
     {
         var expected = "HelloWorld";
         var result = string.Empty;

@@ -84,4 +84,14 @@ public static class PipelineBuilderExtensions
     {
         return pipelineBuilder.Current.Build();
     }
+     public static IPipeline<TSource1,TSource2> Build<TSource1,TSource2, TInput>(
+        this IFluentBuilder<ITargetBlock<TInput>, IPipelineBuilder<Tuple<TSource1,TSource2>>> pipelineBuilder)
+    {
+        if (pipelineBuilder.Current is DataFlowPipelineBuilder<TSource1,TSource2> joinedPipelineBuilder)
+        {
+            return joinedPipelineBuilder.Build();
+        }
+        throw new InvalidOperationException("Turple inputs could be used only for multi source pipeline");
+        
+    }
 }

@@ -13,6 +13,13 @@ One of the key features of DataflowBuilder is its support for parallel asynchron
 By leveraging dataflow blocks, you can process data concurrently, making efficient use of system resources and improving the performance of your applications.
 This is especially useful for CPU-intensive or I/O-bound operations where tasks can benefit from parallelism.
 
+## Features 
+
+- Type safe Builder
+- Process huge data effectively without memory leak
+- Implement any async or synchronous operations like access to database, api call or any cloud resource call
+- Multi-source extension to implement data streaming join
+
 ## Getting Started
 
 ### Installation

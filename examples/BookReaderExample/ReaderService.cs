@@ -11,7 +11,7 @@ namespace BookReaderExample
             return new HttpClient(new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.GZip }).GetStringAsync(uri);
         }
         // Separates the specified text into an array of words. 
-        public string[] CreateWordList(string text)
+        public string[] CreateWords(string text)
         {
             Console.WriteLine("Creating word list...");
 
@@ -25,7 +25,7 @@ namespace BookReaderExample
         }
 
         // Removes short words and duplicates.
-        public string[] FilterWordList(string[] words)
+        public string[] FilterWords(string[] words)
         {
             {
                 Console.WriteLine("Filtering word list...");
@@ -34,7 +34,8 @@ namespace BookReaderExample
                    .Where(word => word.Length > 3)
                    .Distinct()
                    .ToArray();
-            };
+            }
+            ;
         }
 
 

@@ -19,6 +19,14 @@ This is especially useful for CPU-intensive or I/O-bound operations where tasks 
 - Process huge data effectively without memory leak
 - Implement any async or synchronous operations like access to database, api call or any cloud resource call
 - Multi-source extension to implement data streaming join
+- Extensible: add your own block extensions
+
+## Implemented blocks
+
+- FromSource<T> => Source Block
+- Process and ProcessAsync  => Input/Output Function block  (T=>T ou T => U)
+- Batch =>  Batch input elements (T => T[])
+- ToTarget or TaTargetAsynbc => Final block action
 
 ## Getting Started
 

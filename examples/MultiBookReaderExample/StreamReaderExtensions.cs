@@ -12,11 +12,11 @@ namespace MultiBookReaderExample
             {
                 char ch = (char)nextChar;
 
-                if (char.IsWhiteSpace(ch))
+                if (char.IsWhiteSpace(ch) || char.IsPunctuation(ch) || char.IsControl(ch) || char.IsSymbol(ch) || char.IsSeparator(ch) || char.IsNumber(ch))
                 {
                     if (word.Length > 0)
                     {
-                        yield return word.ToString();
+                        yield return word.ToString().ToLowerInvariant();
                         word.Clear();
                     }
                 }

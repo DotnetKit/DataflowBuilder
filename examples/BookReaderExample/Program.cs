@@ -9,8 +9,8 @@ var target = string.Empty;
 
 var pipeline = DataFlowPipelineBuilder.FromSource<string>()
     .ProcessAsync(bookService.DownloadBookAsync)
-    .Process(bookService.CreateWordList)
-    .Process(bookService.FilterWordList)
+    .Process(bookService.CreateWords)
+    .Process(bookService.FilterWords)
     .ProcessMany(bookService.FindReversedWords)
     .ToTarget(bookService.PrintReversedWords)
     .Build();

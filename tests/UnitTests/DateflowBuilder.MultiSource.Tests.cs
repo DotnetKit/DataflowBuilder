@@ -96,5 +96,4 @@ public class DataflowBuilderMultiSourceTests
 
         result.Should().BeEquivalentTo(expected);
     }
-
 }

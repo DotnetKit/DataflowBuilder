@@ -1,0 +1,20 @@
+- name: Overview
+  href: index.md
+- name: Getting Started
+  href: getting-started.md
+- name: Pipeline Concepts
+  href: pipeline-concepts.md
+- name: Multi-Source Pipelines
+  href: multi-source.md
+- name: Parallelism & Performance
+  href: parallelism-and-performance.md
+- name: Error Handling & Faults
+  href: error-handling.md
+- name: Custom Blocks
+  href: custom-blocks.md
+- name: Architecture
+  href: ../ARCHITECTURE.md
+- name: Roadmap
+  href: ../ROADMAP.md
+- name: Changelog
+  href: ../CHANGELOG.md

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json.schemastore.org/docfx",
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "src/DotnetKit.DataflowBuilder/DotnetKit.DataflowBuilder.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "includePrivateMembers": false
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "api/**.yml"
+        ]
+      },
+      {
+        "files": [
+          "docs/**.md",
+          "docs/**/toc.yml",
+          "toc.yml",
+          "index.md",
+          "README.md",
+          "ARCHITECTURE.md",
+          "CHANGELOG.md",
+          "ROADMAP.md"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "images/**"
+        ]
+      }
+    ],
+    "output": "_site",
+    "template": [
+      "default",
+      "modern",
+      "templates"
+    ],
+    "globalMetadata": {
+      "_appName": "DataflowBuilder",
+      "_appTitle": "DataflowBuilder Documentation",
+      "_appLogoPath": "images/dotnetkit.png",
+      "_appFaviconPath": "images/dotnetkit.png",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/DotnetKit/DataflowBuilder",
+        "branch": "main"
+      }
+    }
+  }
+}

@@ -160,7 +160,7 @@ public class DataFlowPipelineBuilder<TSource1, TSource2> : DataFlowPipelineBuild
 /// Implements a fluent pipeline builder managing a sequence of linked <see cref="IDataflowBlock"/> instances.
 /// </summary>
 /// <typeparam name="TSource">The type of elements accepted by the entry block of the pipeline.</typeparam>
-public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource>
+public class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource>
 {
     /// <summary>
     /// Gets the cancellation token associated with the pipeline.

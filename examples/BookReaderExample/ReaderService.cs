@@ -35,7 +35,7 @@ namespace BookReaderExample
                    .Distinct()
                    .ToArray();
             }
-            ;
+
         }
 
 

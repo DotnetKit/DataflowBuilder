@@ -14,6 +14,7 @@ public class GroupBlock<TGroupKey, TInput> : BasePropagatorBlock<TInput, TInput[
     private readonly ITargetBlock<TInput> _inputBlock;
     private readonly BufferBlock<TInput[]> _outputBlock;
     private readonly Dictionary<TGroupKey, List<TInput>> _groups = new();
+    private readonly object _syncLock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GroupBlock{TGroupKey, TInput}"/> class.
@@ -37,19 +38,28 @@ public class GroupBlock<TGroupKey, TInput> : BasePropagatorBlock<TInput, TInput[
         _inputBlock = new ActionBlock<TInput>(async (input) =>
         {
             var groupKey = groupingSelector(input);
+            TInput[]? batchToEmit = null;
 
-            if (!_groups.TryGetValue(groupKey, out var list))
+            lock (_syncLock)
             {
-                list = new List<TInput>(boundedCapacity);
-                _groups.Add(groupKey, list);
+                if (!_groups.TryGetValue(groupKey, out var list))
+                {
+                    list = new List<TInput>(boundedCapacity);
+                    _groups.Add(groupKey, list);
+                }
+                list.Add(input);
+
+                if (list.Count >= boundedCapacity)
+                {
+                    batchToEmit = list.ToArray();
+                    list.Clear();
+                    _groups.Remove(groupKey);
+                }
             }
-            list.Add(input);
 
-            if (list.Count >= boundedCapacity)
+            if (batchToEmit != null)
             {
-                await _outputBlock.SendAsync(list.ToArray());
-                list.Clear();
-                _groups.Remove(groupKey);
+                await _outputBlock.SendAsync(batchToEmit).ConfigureAwait(false);
             }
         }, new ExecutionDataflowBlockOptions()
         {

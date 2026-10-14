@@ -124,7 +124,7 @@ public class DataflowBuilderTests
     [TestMethod]
     public async Task Should_Throw_And_Stop_Pipeline_When_First_Exception_Raised()
     {
-        var input = new int[] { 0, 1, 2, 4, 5 };
+        int[] input = [0, 1, 2, 4, 5];
         int expected = -1;
         int result = -1;
         var pipeline = DataFlowPipelineBuilder.FromSource<int[]>()
@@ -146,7 +146,7 @@ public class DataflowBuilderTests
     [TestMethod]
     public async Task Should_Throw_And_Stop_Pipeline_When_Last_Exception_Raised()
     {
-        var input = new int[] { 1, 2, 4, 5, 0 };
+        int[] input = [1, 2, 4, 5, 0];
         int expected = input.Sum();
         int result = 0;
         var pipeline = DataFlowPipelineBuilder.FromSource<int[]>()
@@ -286,5 +286,33 @@ public class DataflowBuilderTests
 
         maxConcurrentTasks.Should().Be(2);
         concurrentTasks.Should().Be(0);
+    }
+
+    [TestMethod]
+    public async Task Should_Handle_Concurrent_Inputs_In_GroupBlock_ThreadSafely()
+    {
+        var receivedBatches = new ConcurrentBag<int[]>();
+        const int itemsPerKey = 20;
+        const int keyCount = 5;
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<int>(sourceBufferSize: 100)
+            .Group(key => key % keyCount, maxDegreeOfParallelism: 4)
+            .ToTargetAsync(batch =>
+            {
+                receivedBatches.Add(batch);
+                return Task.CompletedTask;
+            }, maxDegreeOfParallelism: 4)
+            .Build();
+
+        var sendTasks = Enumerable.Range(0, keyCount * itemsPerKey)
+            .Select(i => pipeline.SendAsync(i))
+            .ToArray();
+
+        await Task.WhenAll(sendTasks);
+        await pipeline.CompleteAsync();
+
+        var totalItems = receivedBatches.Sum(b => b.Length);
+        totalItems.Should().Be(keyCount * itemsPerKey);
     }
 }

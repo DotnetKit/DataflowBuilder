@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced word splitting behavior and token handling in `BookReaderExample`.
 
 ### Fixed
+- Fixed race condition and potential dictionary corruption in `GroupBlock<TGroupKey, TInput>` by synchronizing dictionary mutations under concurrent parallelism (`maxDegreeOfParallelism > 1`).
 - Fixed generic type constraint warning `CS8714` on `GroupBlock<TGroupKey, TInput>` and `PipelineBuilderExtensions.Group` by enforcing `where TGroupKey : notnull`.
 
 ---

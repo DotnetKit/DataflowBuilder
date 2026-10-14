@@ -1,8 +1,23 @@
 # DataflowBuilder
 
+[![Documentation](https://github.com/dotnetkit/dataflowbuilder/actions/workflows/docs.yml/badge.svg)](https://dotnetkit.github.io/DataflowBuilder/)
 ![internal](https://github.com/dotnetkit/dataflowbuilder/actions/workflows/publish-internal.yml/badge.svg)
 ![public](https://github.com/dotnetkit/dataflowbuilder/actions/workflows/publish-public.yml/badge.svg)
 ![Dotnetkit.DataflowBuilder](https://img.shields.io/nuget/v/Dotnetkit.DataflowBuilder)
+
+## Documentation
+
+Full documentation, architecture guides, and API references are available on our [GitHub Pages Documentation Portal](https://dotnetkit.github.io/DataflowBuilder/):
+
+- 📖 [Getting Started Guide](docs/getting-started.md)
+- 🧩 [Pipeline Concepts](docs/pipeline-concepts.md)
+- 🔀 [Multi-Source Pipelines](docs/multi-source.md)
+- ⚡ [Parallelism & Performance](docs/parallelism-and-performance.md)
+- 🛡️ [Error Handling & Fault Tolerance](docs/error-handling.md)
+- 🧱 [Custom Blocks](docs/custom-blocks.md)
+- 🏗️ [Architecture](ARCHITECTURE.md)
+- 🗺️ [Roadmap](ROADMAP.md)
+- 📝 [Changelog](CHANGELOG.md)
 
 ## Overview
 
@@ -15,18 +30,20 @@ This is especially useful for CPU-intensive or I/O-bound operations where tasks 
 
 ## Features 
 
-- Type safe Builder
-- Process huge data effectively without memory leak
-- Implement any async or synchronous operations like access to database, api call or any cloud resource call
-- Multi-source extension to implement data streaming join
-- Extensible: add your own block extensions
+- Type-safe fluent builder
+- Process huge streaming datasets effectively with zero memory leaks
+- Implement any asynchronous or synchronous operations (database access, API calls, cloud resource integrations)
+- Multi-source extension to implement data streaming joins
+- Extensible: add your own block extensions via `BasePropagatorBlock`
 
 ## Implemented blocks
 
-- FromSource<T> => Source Block
-- Process and ProcessAsync  => Input/Output Function block  (T=>T ou T => U)
-- Batch =>  Batch input elements (T => T[])
-- ToTarget or TaTargetAsynbc => Final block action
+- `FromSource<T>` / `FromSources<T1, T2>` => Entry Source Blocks
+- `Process` and `ProcessAsync` => 1-to-1 Transformation blocks (`T` => `T` or `T` => `U`)
+- `ProcessMany` and `ProcessManyAsync` => 1-to-N Expansion blocks (`T` => `IEnumerable<U>`)
+- `Batch` => Batch input elements (`T` => `T[]`)
+- `Group` => Keyed batch grouping (`T` => `T[]`)
+- `ToTarget` and `ToTargetAsync` => Terminal action consumer blocks
 
 ## Getting Started
 

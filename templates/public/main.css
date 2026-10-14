@@ -1,0 +1,6 @@
+.navbar-brand #logo {
+  max-height: 2rem;
+  width: auto;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}

@@ -1,97 +1,232 @@
-﻿using DotnetKit.DataflowBuilder.Abstractions;
+using DotnetKit.DataflowBuilder.Abstractions;
 using DotnetKit.DataflowBuilder.Core;
 using DotnetKit.DataflowBuilder.CustomBlocks;
 using System.Threading.Tasks.Dataflow;
 
 namespace DotnetKit.DataflowBuilder;
 
+/// <summary>
+/// Provides fluent extension methods for configuring stages, transformations, batching, grouping, and targets on pipeline builders.
+/// </summary>
 public static class PipelineBuilderExtensions
 {
+    /// <summary>
+    /// Appends a synchronous transformation block (<see cref="TransformBlock{TInput, TOutput}"/>) to the pipeline.
+    /// </summary>
+    /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TInput">The incoming element type to be transformed.</typeparam>
+    /// <typeparam name="TOutput">The transformed element type emitted downstream.</typeparam>
+    /// <param name="pipelineBuilder">The fluent pipeline builder instance.</param>
+    /// <param name="propagatorFunc">The synchronous transformation function mapping each input to an output.</param>
+    /// <param name="maxDegreeOfParallelism">The maximum degree of parallel processing. Defaults to 1.</param>
+    /// <returns>A fluent builder positioned at the output of the new transformation block.</returns>
+    /// <example>
+    /// <code>
+    /// builder.Process(x => x.Trim());
+    /// </code>
+    /// </example>
     public static IFluentBuilder<ISourceBlock<TOutput>, IPipelineBuilder<TSource>> Process<TSource, TInput, TOutput>(
         this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder,
-        Func<TInput, TOutput> propagatorFunc, int maxDegreeOfParallelism = 1)
+        Func<TInput, TOutput> propagatorFunc,
+        int maxDegreeOfParallelism = 1)
     {
         var block = pipelineBuilder.Current.CreateTransformBlock(propagatorFunc, maxDegreeOfParallelism);
         pipelineBuilder.Current.AddPropagatorBlock(block);
         return new FluentBuilder<ISourceBlock<TOutput>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }
 
+    /// <summary>
+    /// Appends an asynchronous transformation block (<see cref="TransformBlock{TInput, TOutput}"/>) to the pipeline.
+    /// </summary>
+    /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TInput">The incoming element type to be transformed.</typeparam>
+    /// <typeparam name="TOutput">The transformed element type emitted downstream.</typeparam>
+    /// <param name="pipelineBuilder">The fluent pipeline builder instance.</param>
+    /// <param name="propagatorFunc">The asynchronous transformation function mapping each input to a task producing an output.</param>
+    /// <param name="maxDegreeOfParallelism">The maximum degree of parallel processing. Defaults to 1.</param>
+    /// <returns>A fluent builder positioned at the output of the new transformation block.</returns>
+    /// <example>
+    /// <code>
+    /// builder.ProcessAsync(async id => await repository.GetByIdAsync(id), maxDegreeOfParallelism: 4);
+    /// </code>
+    /// </example>
     public static IFluentBuilder<ISourceBlock<TOutput>, IPipelineBuilder<TSource>> ProcessAsync<TSource, TInput, TOutput>(
         this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder,
-        Func<TInput, Task<TOutput>> propagatorFunc, int maxDegreeOfParallelism = 1)
+        Func<TInput, Task<TOutput>> propagatorFunc,
+        int maxDegreeOfParallelism = 1)
     {
         var block = pipelineBuilder.Current.CreateAsyncTransformBlock(propagatorFunc, maxDegreeOfParallelism);
         pipelineBuilder.Current.AddPropagatorBlock(block);
         return new FluentBuilder<ISourceBlock<TOutput>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }
 
+    /// <summary>
+    /// Appends a synchronous one-to-many transformation block (<see cref="TransformManyBlock{TInput, TOutput}"/>) to the pipeline,
+    /// expanding each input item into a sequence of output items.
+    /// </summary>
+    /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TInput">The incoming element type.</typeparam>
+    /// <typeparam name="TOutput">The element type of the expanded sequence.</typeparam>
+    /// <param name="pipelineBuilder">The fluent pipeline builder instance.</param>
+    /// <param name="propagatorFunc">The function mapping each input item to an enumerable collection of output items.</param>
+    /// <param name="maxDegreeOfParallelism">The maximum degree of parallel processing. Defaults to 1.</param>
+    /// <returns>A fluent builder positioned at the output of the new transform-many block.</returns>
+    /// <example>
+    /// <code>
+    /// builder.ProcessMany(line => line.Split(','));
+    /// </code>
+    /// </example>
     public static IFluentBuilder<ISourceBlock<TOutput>, IPipelineBuilder<TSource>> ProcessMany<TSource, TInput, TOutput>(
         this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder,
-        Func<TInput, IEnumerable<TOutput>> propagatorFunc, int maxDegreeOfParallelism = 1)
+        Func<TInput, IEnumerable<TOutput>> propagatorFunc,
+        int maxDegreeOfParallelism = 1)
     {
         var block = pipelineBuilder.Current.CreateTransformManyBlock(propagatorFunc, maxDegreeOfParallelism);
         pipelineBuilder.Current.AddPropagatorBlock(block);
         return new FluentBuilder<ISourceBlock<TOutput>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }
+
+    /// <summary>
+    /// Appends an asynchronous one-to-many transformation block (<see cref="TransformManyBlock{TInput, TOutput}"/>) to the pipeline,
+    /// expanding each input item asynchronously into a sequence of output items.
+    /// </summary>
+    /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TInput">The incoming element type.</typeparam>
+    /// <typeparam name="TOutput">The element type of the expanded sequence.</typeparam>
+    /// <param name="pipelineBuilder">The fluent pipeline builder instance.</param>
+    /// <param name="propagatorFunc">The asynchronous function mapping each input item to a task returning an enumerable collection of outputs.</param>
+    /// <param name="maxDegreeOfParallelism">The maximum degree of parallel processing. Defaults to 1.</param>
+    /// <returns>A fluent builder positioned at the output of the new transform-many block.</returns>
     public static IFluentBuilder<ISourceBlock<TOutput>, IPipelineBuilder<TSource>> ProcessManyAsync<TSource, TInput, TOutput>(
        this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder,
-       Func<TInput, Task<IEnumerable<TOutput>>> propagatorFunc, int maxDegreeOfParallelism = 1)
+       Func<TInput, Task<IEnumerable<TOutput>>> propagatorFunc,
+       int maxDegreeOfParallelism = 1)
     {
         var block = pipelineBuilder.Current.CreateAsyncTransformManyBlock(propagatorFunc, maxDegreeOfParallelism);
         pipelineBuilder.Current.AddPropagatorBlock(block);
         return new FluentBuilder<ISourceBlock<TOutput>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }
 
-
+    /// <summary>
+    /// Appends a batching block (<see cref="BatchBlock{T}"/>) to the pipeline, grouping incoming elements into arrays of fixed size.
+    /// </summary>
+    /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TInput">The incoming element type to be batched.</typeparam>
+    /// <param name="pipelineBuilder">The fluent pipeline builder instance.</param>
+    /// <param name="batchSize">The maximum number of items per batch. Defaults to 100.</param>
+    /// <returns>A fluent builder positioned at the output of the batch block yielding arrays of <typeparamref name="TInput"/>.</returns>
+    /// <example>
+    /// <code>
+    /// builder.Batch(batchSize: 50);
+    /// </code>
+    /// </example>
     public static IFluentBuilder<ISourceBlock<TInput[]>, IPipelineBuilder<TSource>> Batch<TSource, TInput>(
-        this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder, int batchSize = 100)
+        this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder,
+        int batchSize = 100)
     {
-
         var block = pipelineBuilder.Current.CreateBatchBlock<TInput>(batchSize);
         pipelineBuilder.Current.AddPropagatorBlock(block);
         return new FluentBuilder<ISourceBlock<TInput[]>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }
 
+    /// <summary>
+    /// Appends a grouping block (<see cref="GroupBlock{TGroupKey, TInput}"/>) to the pipeline, grouping elements by a key selector
+    /// and emitting batches when each group's capacity is reached.
+    /// </summary>
+    /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TGroupKey">The non-nullable key type used for grouping.</typeparam>
+    /// <typeparam name="TInput">The incoming element type to be grouped.</typeparam>
+    /// <param name="pipelineBuilder">The fluent pipeline builder instance.</param>
+    /// <param name="groupingSelector">A function extracting the grouping key from each element.</param>
+    /// <param name="maxDegreeOfParallelism">The maximum degree of parallelism. Defaults to 1.</param>
+    /// <returns>A fluent builder positioned at the output of the grouping block yielding arrays of <typeparamref name="TInput"/>.</returns>
     public static IFluentBuilder<ISourceBlock<TInput[]>, IPipelineBuilder<TSource>> Group<TSource, TGroupKey, TInput>(
-        this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder, Func<TInput, TGroupKey> groupingSelector, int maxDegreeOfParallelism = 1)
+        this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder,
+        Func<TInput, TGroupKey> groupingSelector,
+        int maxDegreeOfParallelism = 1) where TGroupKey : notnull
     {
         var block = new GroupBlock<TGroupKey, TInput>(groupingSelector, maxDegreeOfParallelism, maxDegreeOfParallelism);
         pipelineBuilder.Current.AddPropagatorBlock(block);
         return new FluentBuilder<ISourceBlock<TInput[]>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }
 
+    /// <summary>
+    /// Appends an asynchronous terminal action block (<see cref="ActionBlock{TInput}"/>) to consume pipeline items.
+    /// </summary>
+    /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TInput">The element type consumed by the target block.</typeparam>
+    /// <param name="pipelineBuilder">The fluent pipeline builder instance.</param>
+    /// <param name="targetAction">The asynchronous action executed for each incoming item.</param>
+    /// <param name="maxDegreeOfParallelism">The maximum degree of parallel executions. Defaults to 1.</param>
+    /// <returns>A fluent builder configured at the target termination step, ready to call <c>Build()</c>.</returns>
+    /// <example>
+    /// <code>
+    /// builder.ToTargetAsync(async item => await database.SaveAsync(item), maxDegreeOfParallelism: 4);
+    /// </code>
+    /// </example>
     public static IFluentBuilder<ITargetBlock<TInput>, IPipelineBuilder<TSource>> ToTargetAsync<TSource, TInput>(
         this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder,
-        Func<TInput, Task> targetAction, int maxDegreeOfParallelism = 1)
+        Func<TInput, Task> targetAction,
+        int maxDegreeOfParallelism = 1)
     {
         var block = pipelineBuilder.Current.CreateAscynActionBlock(targetAction, maxDegreeOfParallelism);
         pipelineBuilder.Current.AddTargetBlock(block);
         return new FluentBuilder<ITargetBlock<TInput>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }
 
-
+    /// <summary>
+    /// Appends a synchronous terminal action block (<see cref="ActionBlock{TInput}"/>) to consume pipeline items.
+    /// </summary>
+    /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TInput">The element type consumed by the target block.</typeparam>
+    /// <param name="pipelineBuilder">The fluent pipeline builder instance.</param>
+    /// <param name="targetAction">The synchronous action executed for each incoming item.</param>
+    /// <param name="maxDegreeOfParallelism">The maximum degree of parallel executions. Defaults to 1.</param>
+    /// <returns>A fluent builder configured at the target termination step, ready to call <c>Build()</c>.</returns>
+    /// <example>
+    /// <code>
+    /// builder.ToTarget(item => Console.WriteLine(item));
+    /// </code>
+    /// </example>
     public static IFluentBuilder<ITargetBlock<TInput>, IPipelineBuilder<TSource>> ToTarget<TSource, TInput>(
         this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder,
-        Action<TInput> targetAction, int maxDegreeOfParallelism = 1)
+        Action<TInput> targetAction,
+        int maxDegreeOfParallelism = 1)
     {
         var block = pipelineBuilder.Current.CreateActionBlock(targetAction, maxDegreeOfParallelism);
         pipelineBuilder.Current.AddTargetBlock(block);
         return new FluentBuilder<ITargetBlock<TInput>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }
 
+    /// <summary>
+    /// Builds and finalizes a single-source dataflow pipeline from the configured builder stages.
+    /// </summary>
+    /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TInput">The element type consumed at the final target stage.</typeparam>
+    /// <param name="pipelineBuilder">The fluent builder terminating at a target block.</param>
+    /// <returns>An executable <see cref="IPipeline{TSource}"/> instance.</returns>
     public static IPipeline<TSource> Build<TSource, TInput>(
         this IFluentBuilder<ITargetBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder)
     {
         return pipelineBuilder.Current.Build();
     }
-     public static IPipeline<TSource1,TSource2> Build<TSource1,TSource2, TInput>(
-        this IFluentBuilder<ITargetBlock<TInput>, IPipelineBuilder<Tuple<TSource1,TSource2>>> pipelineBuilder)
+
+    /// <summary>
+    /// Builds and finalizes a multi-source dataflow pipeline from the configured builder stages.
+    /// </summary>
+    /// <typeparam name="TSource1">The first entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TSource2">The second entry element type of the pipeline.</typeparam>
+    /// <typeparam name="TInput">The element type consumed at the final target stage.</typeparam>
+    /// <param name="pipelineBuilder">The fluent builder terminating at a target block.</param>
+    /// <returns>An executable <see cref="IPipeline{TSource1, TSource2}"/> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the underlying builder is not a multi-source builder.</exception>
+    public static IPipeline<TSource1, TSource2> Build<TSource1, TSource2, TInput>(
+        this IFluentBuilder<ITargetBlock<TInput>, IPipelineBuilder<Tuple<TSource1, TSource2>>> pipelineBuilder)
     {
-        if (pipelineBuilder.Current is DataFlowPipelineBuilder<TSource1,TSource2> joinedPipelineBuilder)
+        if (pipelineBuilder.Current is DataFlowPipelineBuilder<TSource1, TSource2> joinedPipelineBuilder)
         {
             return joinedPipelineBuilder.Build();
         }
-        throw new InvalidOperationException("Turple inputs could be used only for multi source pipeline");
-        
+        throw new InvalidOperationException("Tuple inputs could be used only for multi source pipeline");
     }
 }

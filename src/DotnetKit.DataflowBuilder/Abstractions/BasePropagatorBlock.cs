@@ -19,10 +19,12 @@ public abstract class BasePropagatorBlock<TInput, TOutput> : IPropagatorBlock<TI
     /// </summary>
     public abstract ISourceBlock<TOutput> Source { get; }
 
+    private IPropagatorBlock<TInput, TOutput>? _pipeline;
+
     /// <summary>
     /// Gets the encapsulated propagator block combining <see cref="Target"/> and <see cref="Source"/>.
     /// </summary>
-    public IPropagatorBlock<TInput, TOutput> Pipeline => DataflowBlock.Encapsulate(Target, Source);
+    public IPropagatorBlock<TInput, TOutput> Pipeline => _pipeline ??= DataflowBlock.Encapsulate(Target, Source);
 
     #region DataFlowConnector
 
@@ -89,10 +91,17 @@ public abstract class BasePropagatorBlock<TInput, TOutput> : IPropagatorBlock<TI
     public virtual void Complete()
     {
         Target.Complete();
-        Target.Completion.ContinueWith(_ =>
+        Target.Completion.ContinueWith(t =>
         {
-            Source.Complete();
-        });
+            if (t.IsFaulted)
+            {
+                ((IDataflowBlock)Source).Fault(t.Exception!);
+            }
+            else
+            {
+                Source.Complete();
+            }
+        }, TaskScheduler.Default);
     }
 
     /// <summary>
@@ -101,7 +110,8 @@ public abstract class BasePropagatorBlock<TInput, TOutput> : IPropagatorBlock<TI
     /// <param name="exception">The exception that caused the fault.</param>
     public virtual void Fault(Exception exception)
     {
-        Pipeline.Fault(exception);
+        Target.Fault(exception);
+        ((IDataflowBlock)Source).Fault(exception);
     }
 
     /// <summary>

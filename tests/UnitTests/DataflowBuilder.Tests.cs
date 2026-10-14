@@ -8,6 +8,7 @@ namespace DataflowBuilder.UnitTests;
 [TestClass]
 public class DataflowBuilderTests
 {
+    [TestMethod]
     public async Task Should_Build_Pipeline_With_Source_And_Target()
     {
         const string expected = "Hello World";
@@ -314,5 +315,78 @@ public class DataflowBuilderTests
 
         var totalItems = receivedBatches.Sum(b => b.Length);
         totalItems.Should().Be(keyCount * itemsPerKey);
+    }
+
+    [TestMethod]
+    public async Task Should_Flush_Incomplete_Groups_On_Pipeline_Completion()
+    {
+        var receivedBatches = new List<string[]>();
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<(string Key, string Value)>()
+            .Group(item => item.Key, boundedCapacity: 5)
+            .Process(batch => batch.Select(x => x.Value).ToArray())
+            .ToTargetAsync(batch =>
+            {
+                receivedBatches.Add(batch);
+                return Task.CompletedTask;
+            })
+            .Build();
+
+        // 3 items for "Alpha" (does not reach capacity of 5)
+        await pipeline.SendAsync(("Alpha", "A1"));
+        await pipeline.SendAsync(("Alpha", "A2"));
+        await pipeline.SendAsync(("Alpha", "A3"));
+
+        // 2 items for "Beta" (does not reach capacity of 5)
+        await pipeline.SendAsync(("Beta", "B1"));
+        await pipeline.SendAsync(("Beta", "B2"));
+
+        // 6 items for "Gamma" (reaches 5, leaving 1 remaining)
+        for (var i = 1; i <= 6; i++)
+        {
+            await pipeline.SendAsync(("Gamma", $"G{i}"));
+        }
+
+        await pipeline.CompleteAsync();
+
+        var totalItems = receivedBatches.Sum(b => b.Length);
+        totalItems.Should().Be(11);
+
+        receivedBatches.Should().Contain(b => b.SequenceEqual(new[] { "G1", "G2", "G3", "G4", "G5" }));
+        receivedBatches.Should().Contain(b => b.SequenceEqual(new[] { "A1", "A2", "A3" }));
+        receivedBatches.Should().Contain(b => b.SequenceEqual(new[] { "B1", "B2" }));
+        receivedBatches.Should().Contain(b => b.SequenceEqual(new[] { "G6" }));
+    }
+
+    [TestMethod]
+    public async Task Should_Support_Configurable_BoundedCapacity_In_Group_Extension()
+    {
+        var receivedBatches = new List<int[]>();
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<int>()
+            .Group(key => key % 2, boundedCapacity: 3, maxDegreeOfParallelism: 1)
+            .ToTargetAsync(batch =>
+            {
+                receivedBatches.Add(batch);
+                return Task.CompletedTask;
+            })
+            .Build();
+
+        // Send 3 evens and 3 odds
+        await pipeline.SendAsync(2);
+        await pipeline.SendAsync(4);
+        await pipeline.SendAsync(6);
+
+        await pipeline.SendAsync(1);
+        await pipeline.SendAsync(3);
+        await pipeline.SendAsync(5);
+
+        await pipeline.CompleteAsync();
+
+        receivedBatches.Should().HaveCount(2);
+        receivedBatches[0].Should().Equal(2, 4, 6);
+        receivedBatches[1].Should().Equal(1, 3, 5);
     }
 }

@@ -131,21 +131,27 @@ public static class PipelineBuilderExtensions
 
     /// <summary>
     /// Appends a grouping block (<see cref="GroupBlock{TGroupKey, TInput}"/>) to the pipeline, grouping elements by a key selector
-    /// and emitting batches when each group's capacity is reached.
+    /// and emitting batches when each group's capacity is reached or upon pipeline completion.
     /// </summary>
     /// <typeparam name="TSource">The entry element type of the pipeline.</typeparam>
     /// <typeparam name="TGroupKey">The non-nullable key type used for grouping.</typeparam>
     /// <typeparam name="TInput">The incoming element type to be grouped.</typeparam>
     /// <param name="pipelineBuilder">The fluent pipeline builder instance.</param>
     /// <param name="groupingSelector">A function extracting the grouping key from each element.</param>
+    /// <param name="boundedCapacity">The maximum number of items per group before a batch is emitted downstream. Defaults to 100.</param>
     /// <param name="maxDegreeOfParallelism">The maximum degree of parallelism. Defaults to 1.</param>
     /// <returns>A fluent builder positioned at the output of the grouping block yielding arrays of <typeparamref name="TInput"/>.</returns>
     public static IFluentBuilder<ISourceBlock<TInput[]>, IPipelineBuilder<TSource>> Group<TSource, TGroupKey, TInput>(
         this IFluentBuilder<ISourceBlock<TInput>, IPipelineBuilder<TSource>> pipelineBuilder,
         Func<TInput, TGroupKey> groupingSelector,
+        int boundedCapacity = 100,
         int maxDegreeOfParallelism = 1) where TGroupKey : notnull
     {
-        var block = new GroupBlock<TGroupKey, TInput>(groupingSelector, maxDegreeOfParallelism, maxDegreeOfParallelism);
+        var block = new GroupBlock<TGroupKey, TInput>(
+            groupingSelector,
+            boundedCapacity,
+            maxDegreeOfParallelism,
+            pipelineBuilder.Current.CancellationToken);
         pipelineBuilder.Current.AddPropagatorBlock(block);
         return new FluentBuilder<ISourceBlock<TInput[]>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }
@@ -169,7 +175,7 @@ public static class PipelineBuilderExtensions
         Func<TInput, Task> targetAction,
         int maxDegreeOfParallelism = 1)
     {
-        var block = pipelineBuilder.Current.CreateAscynActionBlock(targetAction, maxDegreeOfParallelism);
+        var block = pipelineBuilder.Current.CreateAsyncActionBlock(targetAction, maxDegreeOfParallelism);
         pipelineBuilder.Current.AddTargetBlock(block);
         return new FluentBuilder<ITargetBlock<TInput>, IPipelineBuilder<TSource>>(pipelineBuilder.Current);
     }

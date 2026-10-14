@@ -67,6 +67,56 @@ public class GroupBlock<TGroupKey, TInput> : BasePropagatorBlock<TInput, TInput[
             MaxDegreeOfParallelism = maxDegreeOfParallelism,
             CancellationToken = cancellationToken
         });
+
+        _ = FlushOnCompletionAsync();
+    }
+
+    /// <summary>
+    /// Flushes any buffered groups remaining in the dictionary upon input completion and signals completion downstream.
+    /// </summary>
+    private async Task FlushOnCompletionAsync()
+    {
+        try
+        {
+            await _inputBlock.Completion.ConfigureAwait(false);
+
+            List<TInput[]> remainingBatches = new();
+            lock (_syncLock)
+            {
+                foreach (var (_, list) in _groups)
+                {
+                    if (list.Count > 0)
+                    {
+                        remainingBatches.Add(list.ToArray());
+                    }
+                }
+                _groups.Clear();
+            }
+
+            foreach (var batch in remainingBatches)
+            {
+                await _outputBlock.SendAsync(batch).ConfigureAwait(false);
+            }
+
+            _outputBlock.Complete();
+        }
+        catch (Exception ex)
+        {
+            ((IDataflowBlock)_outputBlock).Fault(ex);
+        }
+    }
+
+    /// <inheritdoc />
+    public override void Complete()
+    {
+        _inputBlock.Complete();
+    }
+
+    /// <inheritdoc />
+    public override void Fault(Exception exception)
+    {
+        _inputBlock.Fault(exception);
+        ((IDataflowBlock)_outputBlock).Fault(exception);
     }
 
     /// <summary>

@@ -299,7 +299,7 @@ public class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource>
     /// <param name="targetAction">The asynchronous action executed for each item.</param>
     /// <param name="maxDegreeOfParallelism">The maximum degree of parallel execution.</param>
     /// <returns>A configured action block.</returns>
-    public ITargetBlock<TInput> CreateAscynActionBlock<TInput>(
+    public ITargetBlock<TInput> CreateAsyncActionBlock<TInput>(
         Func<TInput, Task> targetAction,
         int maxDegreeOfParallelism)
     {
@@ -310,6 +310,13 @@ public class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource>
             CancellationToken = CancellationToken
         });
     }
+
+    /// <inheritdoc />
+    [Obsolete("Use CreateAsyncActionBlock instead. This method has a typo and will be removed in a future release.")]
+    public ITargetBlock<TInput> CreateAscynActionBlock<TInput>(
+        Func<TInput, Task> targetAction,
+        int maxDegreeOfParallelism)
+        => CreateAsyncActionBlock(targetAction, maxDegreeOfParallelism);
 
     /// <summary>
     /// Creates a synchronous transform block mapping an input item to an output item.

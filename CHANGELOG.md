@@ -34,8 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced word splitting behavior and token handling in `BookReaderExample`.
 
 ### Fixed
-- Fixed race condition and potential dictionary corruption in `GroupBlock<TGroupKey, TInput>` by synchronizing dictionary mutations under concurrent parallelism (`maxDegreeOfParallelism > 1`).
-- Fixed generic type constraint warning `CS8714` on `GroupBlock<TGroupKey, TInput>` and `PipelineBuilderExtensions.Group` by enforcing `where TGroupKey : notnull`.
+- **GroupBlock Data Loss on Completion**: Fixed silent data loss in `GroupBlock<TGroupKey, TInput>` by automatically flushing buffered partial groups and propagating completion/fault downstream upon input completion.
+- **GroupBlock Race Condition**: Synchronized internal dictionary and list state mutations in `GroupBlock<TGroupKey, TInput>` to guarantee thread safety under concurrent parallelism (`maxDegreeOfParallelism > 1`).
+- **Group Extension Parameter Inversion**: Decoupled `boundedCapacity` and `maxDegreeOfParallelism` in `PipelineBuilderExtensions.Group` to allow configuring group batch sizes independently from concurrency.
+- **BasePropagatorBlock Encapsulation Allocation**: Cached the encapsulated `DataflowBlock.Encapsulate` instance in `BasePropagatorBlock<TInput, TOutput>` to eliminate repeated object allocations per dataflow connector call, and corrected fault propagation on completion.
+- **API Method Typo**: Added `CreateAsyncActionBlock` with corrected spelling in `IPipelineBuilder` and `DataFlowPipelineBuilder`, preserving `CreateAscynActionBlock` as an `[Obsolete]` forwarding member for backward compatibility.
+- **Inactive Test Suite Activation**: Restored missing `[TestMethod]` attribute on `Should_Build_Pipeline_With_Source_And_Target()` in `DataflowBuilder.Tests.cs`.
+- **Generic Type Constraint**: Enforced `where TGroupKey : notnull` on `GroupBlock<TGroupKey, TInput>` and `PipelineBuilderExtensions.Group` to resolve compiler warning `CS8714`.
 
 ---
 

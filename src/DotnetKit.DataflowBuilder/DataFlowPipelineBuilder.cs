@@ -410,7 +410,7 @@ public class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource>
         {
             try
             {
-                await asyncAction(input);
+                await asyncAction(input).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -437,7 +437,7 @@ public class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource>
         {
             try
             {
-                return await asyncFunction(input);
+                return await asyncFunction(input).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

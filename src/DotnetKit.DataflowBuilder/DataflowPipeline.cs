@@ -30,10 +30,8 @@ public class DataflowPipeline<TSource> : IPipeline<TSource>
     /// <param name="dataItem">The item to send.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task that completes when the item is accepted by the pipeline.</returns>
-    public async Task SendAsync(TSource dataItem, CancellationToken cancellationToken = default)
-    {
-        await _sourceBlock.SendAsync(dataItem, cancellationToken);
-    }
+    public Task SendAsync(TSource dataItem, CancellationToken cancellationToken = default)
+        => _sourceBlock.SendAsync(dataItem, cancellationToken);
 
     /// <summary>
     /// Signals completion to the entry block and waits asynchronously until all pipeline stages have completed.
@@ -42,6 +40,11 @@ public class DataflowPipeline<TSource> : IPipeline<TSource>
     public Task CompleteAsync()
     {
         _sourceBlock.Complete();
+        if (ReferenceEquals(_sourceBlock, _destinationBlock))
+        {
+            return _sourceBlock.Completion;
+        }
+
         return Task.WhenAll(_sourceBlock.Completion, _destinationBlock.Completion);
     }
 }
@@ -75,10 +78,8 @@ public class DataflowPipeline<TSource1, TSource2> : IPipeline<TSource1, TSource2
     /// <param name="dataItem">The item to send to the first source.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task that completes when the item is accepted.</returns>
-    public async Task Send1Async(TSource1 dataItem, CancellationToken cancellationToken = default)
-    {
-        await _sourceBlock.Target1.SendAsync(dataItem, cancellationToken);
-    }
+    public Task Send1Async(TSource1 dataItem, CancellationToken cancellationToken = default)
+        => _sourceBlock.Target1.SendAsync(dataItem, cancellationToken);
 
     /// <summary>
     /// Asynchronously sends a data item to the second source input.
@@ -86,10 +87,8 @@ public class DataflowPipeline<TSource1, TSource2> : IPipeline<TSource1, TSource2
     /// <param name="dataItem">The item to send to the second source.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task that completes when the item is accepted.</returns>
-    public async Task Send2Async(TSource2 dataItem, CancellationToken cancellationToken = default)
-    {
-        await _sourceBlock.Target2.SendAsync(dataItem, cancellationToken);
-    }
+    public Task Send2Async(TSource2 dataItem, CancellationToken cancellationToken = default)
+        => _sourceBlock.Target2.SendAsync(dataItem, cancellationToken);
 
     /// <summary>
     /// Signals completion to both source targets and waits asynchronously for all pipeline stages to complete.
@@ -100,6 +99,11 @@ public class DataflowPipeline<TSource1, TSource2> : IPipeline<TSource1, TSource2
         _sourceBlock.Target1.Complete();
         _sourceBlock.Target2.Complete();
         _sourceBlock.Complete();
+
+        if (ReferenceEquals(_sourceBlock, _destinationBlock))
+        {
+            return _sourceBlock.Completion;
+        }
 
         return Task.WhenAll(_sourceBlock.Completion, _destinationBlock.Completion);
     }

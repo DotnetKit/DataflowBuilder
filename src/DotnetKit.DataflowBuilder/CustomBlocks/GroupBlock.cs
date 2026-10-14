@@ -80,17 +80,25 @@ public class GroupBlock<TGroupKey, TInput> : BasePropagatorBlock<TInput, TInput[
         {
             await _inputBlock.Completion.ConfigureAwait(false);
 
-            List<TInput[]> remainingBatches = new();
+            List<TInput[]> remainingBatches;
             lock (_syncLock)
             {
-                foreach (var (_, list) in _groups)
+                if (_groups.Count == 0)
                 {
-                    if (list.Count > 0)
-                    {
-                        remainingBatches.Add(list.ToArray());
-                    }
+                    remainingBatches = new List<TInput[]>(0);
                 }
-                _groups.Clear();
+                else
+                {
+                    remainingBatches = new List<TInput[]>(_groups.Count);
+                    foreach (var (_, list) in _groups)
+                    {
+                        if (list.Count > 0)
+                        {
+                            remainingBatches.Add(list.ToArray());
+                        }
+                    }
+                    _groups.Clear();
+                }
             }
 
             foreach (var batch in remainingBatches)

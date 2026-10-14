@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Threading.Channels;
 using DotnetKit.DataflowBuilder;
 using DotnetKit.DataflowBuilder.Extensions;
 using FluentAssertions;
@@ -388,5 +389,199 @@ public class DataflowBuilderTests
         receivedBatches.Should().HaveCount(2);
         receivedBatches[0].Should().Equal(2, 4, 6);
         receivedBatches[1].Should().Equal(1, 3, 5);
+    }
+
+    [TestMethod]
+    public async Task Should_Stream_From_IAsyncEnumerable_Using_SendAllAsync()
+    {
+        var received = new List<int>();
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<int>()
+            .ToTargetAsync(item =>
+            {
+                received.Add(item);
+                return Task.CompletedTask;
+            })
+            .Build();
+
+        static async IAsyncEnumerable<int> GenerateNumbersAsync()
+        {
+            for (var i = 1; i <= 5; i++)
+            {
+                await Task.Yield();
+                yield return i;
+            }
+        }
+
+        await pipeline.SendAllAsync(GenerateNumbersAsync(), completeAfterSend: true);
+
+        received.Should().Equal(1, 2, 3, 4, 5);
+    }
+
+    [TestMethod]
+    public async Task Should_Stream_From_Channel_Using_SendFromChannelAsync()
+    {
+        var channel = Channel.CreateUnbounded<string>();
+        var received = new List<string>();
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<string>()
+            .ToTargetAsync(item =>
+            {
+                received.Add(item);
+                return Task.CompletedTask;
+            })
+            .Build();
+
+        await channel.Writer.WriteAsync("A");
+        await channel.Writer.WriteAsync("B");
+        await channel.Writer.WriteAsync("C");
+        channel.Writer.Complete();
+
+        await pipeline.SendFromChannelAsync(channel.Reader, completeAfterSend: true);
+
+        received.Should().Equal("A", "B", "C");
+    }
+
+    [TestMethod]
+    public async Task Should_Forward_Pipeline_Output_To_Channel_Using_ToChannel()
+    {
+        var channel = Channel.CreateUnbounded<int>();
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<int>()
+            .Process(x => x * 10)
+            .ToChannel(channel.Writer)
+            .Build();
+
+        await pipeline.SendAsync(1);
+        await pipeline.SendAsync(2);
+        await pipeline.SendAsync(3);
+        await pipeline.CompleteAsync();
+
+        var results = new List<int>();
+        await foreach (var item in channel.Reader.ReadAllAsync())
+        {
+            results.Add(item);
+        }
+
+        results.Should().Equal(10, 20, 30);
+    }
+
+    [TestMethod]
+    public async Task Should_Filter_Items_Synchronously_And_Asynchronously()
+    {
+        var results = new List<int>();
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<int>()
+            .Filter(x => x % 2 == 0) // only evens
+            .FilterAsync(async x =>
+            {
+                await Task.Yield();
+                return x > 4; // only > 4
+            })
+            .ToTargetAsync(item =>
+            {
+                results.Add(item);
+                return Task.CompletedTask;
+            })
+            .Build();
+
+        foreach (var i in Enumerable.Range(1, 10))
+        {
+            await pipeline.SendAsync(i);
+        }
+        await pipeline.CompleteAsync();
+
+        results.Should().Equal(6, 8, 10);
+    }
+
+    [TestMethod]
+    public async Task Should_Batch_Items_By_Time_When_Timeout_Expires()
+    {
+        var receivedBatches = new List<string[]>();
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<string>()
+            .Batch(batchSize: 10, timeout: TimeSpan.FromMilliseconds(80))
+            .ToTargetAsync(batch =>
+            {
+                receivedBatches.Add(batch);
+                return Task.CompletedTask;
+            })
+            .Build();
+
+        // Send 3 items (well below batchSize of 10)
+        await pipeline.SendAsync("one");
+        await pipeline.SendAsync("two");
+        await pipeline.SendAsync("three");
+
+        // Wait for timeout to trigger emission
+        await Task.Delay(200);
+
+        receivedBatches.Should().HaveCount(1);
+        receivedBatches[0].Should().Equal("one", "two", "three");
+
+        await pipeline.CompleteAsync();
+    }
+
+    [TestMethod]
+    public async Task Should_Batch_Items_By_Size_When_Capacity_Reached_Before_Timeout()
+    {
+        var receivedBatches = new List<int[]>();
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<int>()
+            .Batch(batchSize: 3, timeout: TimeSpan.FromSeconds(5))
+            .ToTargetAsync(batch =>
+            {
+                receivedBatches.Add(batch);
+                return Task.CompletedTask;
+            })
+            .Build();
+
+        await pipeline.SendAsync(1);
+        await pipeline.SendAsync(2);
+        await pipeline.SendAsync(3);
+
+        // Immediate complete
+        await pipeline.CompleteAsync();
+
+        receivedBatches.Should().HaveCount(1);
+        receivedBatches[0].Should().Equal(1, 2, 3);
+    }
+
+    [TestMethod]
+    public async Task Should_Retry_Failed_Processing_With_Configured_RetryCount()
+    {
+        var attempts = 0;
+        var results = new List<int>();
+
+        var pipeline = DataFlowPipelineBuilder
+            .FromSource<int>()
+            .ProcessAsync(async item =>
+            {
+                attempts++;
+                if (attempts < 3)
+                {
+                    throw new InvalidOperationException("Transient glitch");
+                }
+                await Task.Yield();
+                return item * 2;
+            }, maxDegreeOfParallelism: 1, retryCount: 3, retryDelay: TimeSpan.FromMilliseconds(10))
+            .ToTargetAsync(item =>
+            {
+                results.Add(item);
+                return Task.CompletedTask;
+            })
+            .Build();
+
+        await pipeline.SendAsync(42);
+        await pipeline.CompleteAsync();
+
+        attempts.Should().Be(3);
+        results.Should().Equal(84);
     }
 }

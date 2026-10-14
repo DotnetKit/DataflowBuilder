@@ -33,6 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Target latest LTS runtime (`net8.0`) across all libraries, examples, and test projects.
 - Enhanced word splitting behavior and token handling in `BookReaderExample`.
 
+### Performance
+- **Zero-Allocation Pipeline Ingestion**: Replaced `async`/`await` state machine wrappers in `SendAsync`, `Send1Async`, and `Send2Async` with direct task returns, eliminating heap state machine allocations on every message sent into the pipeline.
+- **Single-Stage Pipeline Completion**: Avoided allocating `Task.WhenAll` promise objects in `CompleteAsync()` when the source and destination blocks are the same block.
+- **Synchronization Context Decoupling**: Added `.ConfigureAwait(false)` to asynchronous delegate wrappers in `DataFlowPipelineBuilder` and `GroupBlock` to prevent context switches and avoid deadlock vulnerabilities in UI and single-threaded runtimes.
+- **Pre-sized Collections**: Pre-sized remaining batch collections in `GroupBlock` flush routines to prevent array resizing overhead.
+- **Socket and Resource Optimization**: Reused `static readonly HttpClient` with decompression in sample services to prevent socket exhaustion.
+- **Early-Exit Partitioning**: Added empty collection short-circuit in `EnumerableExtensions.GroupByRange`.
+
 ### Fixed
 - **GroupBlock Data Loss on Completion**: Fixed silent data loss in `GroupBlock<TGroupKey, TInput>` by automatically flushing buffered partial groups and propagating completion/fault downstream upon input completion.
 - **GroupBlock Race Condition**: Synchronized internal dictionary and list state mutations in `GroupBlock<TGroupKey, TInput>` to guarantee thread safety under concurrent parallelism (`maxDegreeOfParallelism > 1`).

@@ -29,7 +29,7 @@ DataflowBuilder divides blocks into three roles:
 | Category | Underlying Block Type | Purpose | Methods |
 | :--- | :--- | :--- | :--- |
 | **Source Block** | `BufferBlock<T>` / `JoinBlock<T1, T2>` | Accepts external inputs into the pipeline with bounded queuing | `FromSource<T>()`, `FromSources<T1, T2>()` |
-| **Propagator Block** | `TransformBlock<TIn, TOut>`, `TransformManyBlock<TIn, TOut>`, `BatchBlock<T>`, `GroupBlock<TKey, T>` | Transforms, filters, expands, batches, or groups intermediate items | `Process`, `ProcessAsync`, `ProcessMany`, `ProcessManyAsync`, `Batch`, `Group` |
+| **Propagator Block** | `TransformBlock<TIn, TOut>`, `TransformManyBlock<TIn, TOut>`, `BatchBlock<T>`, `TimeBatchBlock<T>`, `GroupBlock<TKey, T>` | Transforms, filters, expands, batches, or groups intermediate items | `Process`, `ProcessAsync`, `ProcessMany`, `ProcessManyAsync`, `Batch`, `Group` |
 | **Target Block** | `ActionBlock<T>` | Final consumer that terminates the pipeline | `ToTarget`, `ToTargetAsync` |
 
 ---

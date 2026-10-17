@@ -9,7 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.1.1] - 2026-10-17
+
 ### Added
+- **TimeBatchBlock (Temporal Window Batching)**:
+  - Added `TimeBatchBlock<T>` supporting time-based flushing or maximum item count batching (`Batch(batchSize, timeout)`).
+  - Built-in timer flush mechanism that automatically dispatches buffered items when the configured duration expires, regardless of whether the count threshold is met.
+  - Automatic completion and fault propagation to ensure buffered items are cleanly flushed upon pipeline completion.
+- **Pipeline Ingestion & Streaming Extensions**:
+  - `SendAllAsync`: Asynchronous bulk streaming for `IEnumerable<T>` and `IAsyncEnumerable<T>` collections with cancellation token support.
+  - `SendFromChannelAsync`: Seamless bridge from `System.Threading.Channels.ChannelReader<T>` with automatic pipeline completion upon channel exhaustion.
+  - `ToChannel`: Direct extraction of pipeline output buffers as an asynchronous `ChannelReader<T>`.
+- **Fault Tolerance & Resilience**:
+  - `ProcessAsync` overload with retry resilience (`retryCount`, `retryDelay`), providing automatic retries with backoff for transient failures before propagating exceptions.
 - **Multi-Source Pipelines**:
   - `DataFlowPipelineBuilder.FromSources<T1, T2>()` builder to ingest and coordinate two independent input streams into a single pipeline.
   - `IPipeline<TSource1, TSource2>` abstraction providing asynchronous `Send1Async` and `Send2Async` ingestion methods with unified completion.
@@ -24,14 +38,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GitHub Actions workflow (`docs.yml`) for automated documentation builds and GitHub Pages deployment.
   - Architecture guide (`ARCHITECTURE.md`) covering memory model, block mapping, and fault isolation.
   - Guides for Getting Started, Pipeline Concepts, Multi-Source Pipelines, Parallelism & Performance, Error Handling, and Custom Blocks.
+  - Use case reference table in root `README.md` mapping use cases to solutions and real-world examples.
+  - Mermaid workflow diagrams and structured input/output sample tables in `BookReaderExample` and `MultiBookReaderExample`.
   - Project Roadmap (`ROADMAP.md`).
-- **Development & Code Quality**:
+- **Test Suite & Code Quality**:
+  - Dedicated unit test suite `PipelineExtensions.Tests.cs` bringing `PipelineExtensions` to 100% line and branch test coverage.
+  - Multi-source concurrent test suite `DateflowBuilder.MultiSource.Tests.cs`.
   - Modern C# & ReSharper development guidelines skill (`.agents/skills/resharper-csharp`) and automated formatting script.
   - Recommended modern `.editorconfig` ruleset.
 
 ### Changed
-- Target latest LTS runtime (`net8.0`) across all libraries, examples, and test projects.
+- Promoted `PipelineExtensions` and `PipelineBuilderExtensions` to the root `DotnetKit.DataflowBuilder` namespace, enabling immediate fluent API discovery without additional `using` statements.
+- Targeted latest LTS runtime (`net8.0`) across all libraries, examples, and test projects while preserving `netstandard2.1` compatibility.
 - Enhanced word splitting behavior and token handling in `BookReaderExample`.
+- Modernized GitHub Actions workflow definitions and MinVer pre-release configuration.
 
 ### Performance
 - **Zero-Allocation Pipeline Ingestion**: Replaced `async`/`await` state machine wrappers in `SendAsync`, `Send1Async`, and `Send2Async` with direct task returns, eliminating heap state machine allocations on every message sent into the pipeline.
@@ -42,6 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Early-Exit Partitioning**: Added empty collection short-circuit in `EnumerableExtensions.GroupByRange`.
 
 ### Fixed
+- **Multi-Targeting SDK Publishing Issue**: Added `<IsPublishable>false</IsPublishable>` to class library and unit test projects, resolving `NETSDK1129` errors during `dotnet publish`.
+- **Packaging Warnings**: Added `<IsPackable>false</IsPackable>` to example projects to prevent unintentional packaging and `NU5104` warnings.
 - **GroupBlock Data Loss on Completion**: Fixed silent data loss in `GroupBlock<TGroupKey, TInput>` by automatically flushing buffered partial groups and propagating completion/fault downstream upon input completion.
 - **GroupBlock Race Condition**: Synchronized internal dictionary and list state mutations in `GroupBlock<TGroupKey, TInput>` to guarantee thread safety under concurrent parallelism (`maxDegreeOfParallelism > 1`).
 - **Group Extension Parameter Inversion**: Decoupled `boundedCapacity` and `maxDegreeOfParallelism` in `PipelineBuilderExtensions.Group` to allow configuring group batch sizes independently from concurrency.
@@ -67,3 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Removed legacy .NET 5 target in favor of modern .NET.
 - Updated package metadata, MIT licensing, and project repository URLs.
+
+[Unreleased]: https://github.com/DotnetKit/DataflowBuilder/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/DotnetKit/DataflowBuilder/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/DotnetKit/DataflowBuilder/releases/tag/v1.1.0

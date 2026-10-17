@@ -24,7 +24,7 @@ public abstract class BasePropagatorBlock<TInput, TOutput> : IPropagatorBlock<TI
 
 ## 2. Walkthrough: The Built-in `GroupBlock`
 
-To see how `BasePropagatorBlock` works in practice, examine the built-in `GroupBlock<TGroupKey, TInput>`:
+To see how `BasePropagatorBlock` works in practice, examine built-in blocks such as `TimeBatchBlock<T>` (which uses timer-driven flushes) and `GroupBlock<TGroupKey, TInput>`:
 
 ```csharp
 using DotnetKit.DataflowBuilder.Abstractions;

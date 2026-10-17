@@ -33,6 +33,8 @@ This is especially useful for CPU-intensive or I/O-bound operations where tasks 
 - Type-safe fluent builder
 - Process huge streaming datasets effectively with zero memory leaks
 - Implement any asynchronous or synchronous operations (database access, API calls, cloud resource integrations)
+- Time-windowed and size-based micro-batching (`TimeBatchBlock`)
+- Keyed batch grouping (`GroupBlock`)
 - Multi-source extension to implement data streaming joins
 - Extensible: add your own block extensions via `BasePropagatorBlock`
 
@@ -41,8 +43,8 @@ This is especially useful for CPU-intensive or I/O-bound operations where tasks 
 - `FromSource<T>` / `FromSources<T1, T2>` => Entry Source Blocks
 - `Process` and `ProcessAsync` => 1-to-1 Transformation blocks (`T` => `T` or `T` => `U`)
 - `ProcessMany` and `ProcessManyAsync` => 1-to-N Expansion blocks (`T` => `IEnumerable<U>`)
-- `Batch` => Batch input elements (`T` => `T[]`)
-- `Group` => Keyed batch grouping (`T` => `T[]`)
+- `Batch` => Size-based or time-windowed batching (`BatchBlock` / `TimeBatchBlock<T>`, `T` => `T[]`)
+- `Group` => Keyed batch grouping (`GroupBlock<TKey, T>`, `T` => `T[]`)
 - `ToTarget` and `ToTargetAsync` => Terminal action consumer blocks
 
 ## What You Can Do with DataflowBuilder ?
@@ -148,7 +150,7 @@ public async Task RunPipeline()
 
 `DataflowBuilder` supports advanced operations like batching and grouping.
 
-#### Batching
+#### Size-Based Batching
 
 ```csharp
 var pipeline = DataFlowPipelineBuilder.FromSource<int>()
@@ -164,6 +166,24 @@ for (int i = 1; i <= 10; i++)
     await pipeline.SendAsync(i);
 }
 
+await pipeline.CompleteAsync();
+```
+
+#### Time-Windowed Batching (TimeBatchBlock)
+
+Buffer streaming events and automatically flush when `batchSize` is reached **OR** when the `timeout` duration expires:
+
+```csharp
+var pipeline = DataFlowPipelineBuilder.FromSource<MetricEvent>()
+    .Batch(batchSize: 100, timeout: TimeSpan.FromSeconds(2))
+    .ToTargetAsync(async batch =>
+    {
+        await metricsClient.SendBatchAsync(batch);
+    })
+    .Build();
+
+await pipeline.SendAsync(new MetricEvent("cpu_load", 0.75));
+// Automatically flushes after 2 seconds even if batchSize has not been reached
 await pipeline.CompleteAsync();
 ```
 

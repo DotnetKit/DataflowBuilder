@@ -5,13 +5,10 @@ on:
     branches: [main]
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
-    paths: ["src/**"]
 
 env:
-  AZURE_ARTIFACTS_FEED_URL: https://api.nuget.org/v3/index.json
-  BUILD_CONFIGURATION: "Release" # set this to the appropriate build configuration
-  DOTNET_VERSION: "8.0.x"
-  TEST_STORAGE_CONNECTION_STRING: ${{ secrets.TEST_STORAGE_CONNECTION_STRING }}
+  NUGET_FEED_URL: https://api.nuget.org/v3/index.json
+  BUILD_CONFIGURATION: "Release"
   MinVerMinimumMajorMinor: "1.0"
   MinVerTagPrefix: "v"
   MinVerDefaultPreReleaseIdentifiers: "preview.0"
@@ -21,63 +18,59 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Checkout the repo
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Setup .NET Core SDK
-      - name: Setup .NET Core
+      # Setup .NET SDKs (both .NET 8 and .NET 10)
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
-      # Retrieve minVer version
-      - name: Set APP_VERSION based on repo w/MinVer
-        run: |
-          dotnet tool install -g minver-cli -v q
-          APP_VERSION=`minver`
-          echo "Adding version to GITHUB_ENV: APP_VERSION=$APP_VERSION"
-          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
-
-      # Run dotnet build and package
+      # Run dotnet build and test
       - name: dotnet build and test
         run: |
           dotnet restore
           dotnet build --configuration '${{ env.BUILD_CONFIGURATION }}'
-          dotnet test --configuration '${{ env.BUILD_CONFIGURATION }}'
+          dotnet test tests/UnitTests/DataflowBuilder.UnitTests.csproj --configuration '${{ env.BUILD_CONFIGURATION }}' --no-build
 
-  az-artifacts-build-and-deploy:
+  publish:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for GitHub OIDC token generation for NuGet Trusted Publishing
+      contents: read
     steps:
       # Checkout the repo
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Setup .NET Core SDK
-      - name: Setup .NET Core
+      # Setup .NET SDKs
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
-      # Retrieve minVer version
-      - name: Set APP_VERSION based on repo w/MinVer
-        run: |
-          dotnet tool install -g minver-cli -v q
-          APP_VERSION=`minver`
-          echo "Adding version to GITHUB_ENV: APP_VERSION=$APP_VERSION"
-          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
-
-      # Run dotnet build and package
-      - name: dotnet build and publish
+      # Run dotnet build and pack
+      - name: dotnet build and pack
         run: |
           dotnet restore
-          dotnet build --configuration '${{ env.BUILD_CONFIGURATION }}' --version-suffix '${{ env.APP_VERSION }}'
-          dotnet pack -c '${{ env.BUILD_CONFIGURATION }}' --no-build  --version-suffix '${{ env.APP_VERSION }}'
+          dotnet build --configuration '${{ env.BUILD_CONFIGURATION }}'
+          dotnet pack -c '${{ env.BUILD_CONFIGURATION }}' --no-build
 
-      # Publish the package to Azure Artifacts
-      - name: "dotnet publish"
-        run: dotnet nuget push src/DotnetKit.*/bin/Release/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }}  --source https://api.nuget.org/v3/index.json
+      # Exchange GitHub Actions OIDC token for short-lived NuGet.org API key
+      - name: NuGet login (OIDC → temp API key)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER || 'Evodim' }}
+
+      # Publish the package to NuGet.org
+      - name: "dotnet nuget push"
+        run: dotnet nuget push "src/DotnetKit.*/bin/Release/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate

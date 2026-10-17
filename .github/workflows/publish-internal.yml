@@ -3,53 +3,47 @@ name: PR internal deployment
 on:
   pull_request:
     branches: [main]
-    paths: ["src/**"]
 env:
-  GITHUB_ARTIFACTS_FEED_URL: https://nuget.pkg.github.com/dotnetkit/index.json
-  BUILD_CONFIGURATION: "Release" # set this to the appropriate build configuration
-  DOTNET_VERSION: "8.0.x"
+  GITHUB_ARTIFACTS_FEED_URL: https://nuget.pkg.github.com/DotnetKit/index.json
+  BUILD_CONFIGURATION: "Release"
   MinVerMinimumMajorMinor: "1.0"
   MinVerTagPrefix: "v"
-  MinVerDefaultPreReleaseIdentifiers: "alpha-${{ github.run_number }}.0"
+  MinVerDefaultPreReleaseIdentifiers: "alpha.${{ github.run_number }}.0"
 
 jobs:
   gh-build-and-deploy-internal:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       # Checkout the repo
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Setup .NET Core SDK
-      - name: Setup .NET Core
+      # Setup .NET SDKs
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
-      # Retrieve minVer version
-      - name: Set APP_VERSION based on repo w/MinVer
-        run: |
-          dotnet tool install -g minver-cli -v q
-          APP_VERSION=`minver`
-          echo "Adding version to GITHUB_ENV: APP_VERSION=$APP_VERSION"
-          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
-
-      # Setup github packaged feed
+      # Setup github package feed
       - name: dotnet nuget add source
         env:
-          USERNAME: DotnetKit
+          USERNAME: Evodim
         run: |
           dotnet nuget add source --username medevod --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github '${{ env.GITHUB_ARTIFACTS_FEED_URL }}'
 
-      # Run dotnet build and package
+      # Run dotnet build and pack
       - name: dotnet build and publish
         run: |
           dotnet restore
-          dotnet build --configuration '${{ env.BUILD_CONFIGURATION }}'  --version-suffix '${{ env.APP_VERSION }}'
-          dotnet pack -c '${{ env.BUILD_CONFIGURATION }}' --no-build --version-suffix '${{ env.APP_VERSION }}'
+          dotnet build --configuration '${{ env.BUILD_CONFIGURATION }}'
+          dotnet pack -c '${{ env.BUILD_CONFIGURATION }}' --no-build
 
-      # Publish the package to Azure Artifacts
+      # Publish the package to GitHub Packages
       - name: "dotnet publish"
-        run: dotnet nuget push --source github  --api-key  ${{ secrets.INTERNAL_PKG_NUGET_PAT }} src/DotnetKit.*/bin/Release/*.nupkg
+        run: dotnet nuget push src/DotnetKit.*/bin/Release/*.nupkg --source github --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate

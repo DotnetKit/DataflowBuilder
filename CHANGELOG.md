@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Promoted `PipelineExtensions` and `PipelineBuilderExtensions` to the root `DotnetKit.DataflowBuilder` namespace, enabling immediate fluent API discovery without additional `using` statements.
 - Targeted latest LTS runtime (`net8.0`) across all libraries, examples, and test projects while preserving `netstandard2.1` compatibility.
 - Enhanced word splitting behavior and token handling in `BookReaderExample`.
-- Modernized GitHub Actions workflow definitions and MinVer pre-release configuration.
+- Modernized GitHub Actions CI/CD workflows: upgraded public deployment to NuGet Trusted Publishing via GitHub Actions OIDC (`NuGet/login@v1`), migrated internal package deployment to standard `GITHUB_TOKEN` permissions, and standardized MinVer pre-release configuration.
 
 ### Performance
 - **Zero-Allocation Pipeline Ingestion**: Replaced `async`/`await` state machine wrappers in `SendAsync`, `Send1Async`, and `Send2Async` with direct task returns, eliminating heap state machine allocations on every message sent into the pipeline.

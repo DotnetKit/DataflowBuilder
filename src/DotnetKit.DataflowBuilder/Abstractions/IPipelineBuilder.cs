@@ -75,6 +75,18 @@ public interface IPipelineBuilder
     /// <param name="targetAction">The asynchronous consumer action invoked for each incoming item.</param>
     /// <param name="maxDegreeOfParallelism">The maximum number of concurrent tasks allowed.</param>
     /// <returns>A configured target block.</returns>
+    ITargetBlock<TInput> CreateAsyncActionBlock<TInput>(
+        Func<TInput, Task> targetAction,
+        int maxDegreeOfParallelism);
+
+    /// <summary>
+    /// Creates an asynchronous terminal action block (<see cref="ActionBlock{TInput}"/>) with error handling.
+    /// </summary>
+    /// <typeparam name="TInput">The input item type.</typeparam>
+    /// <param name="targetAction">The asynchronous consumer action invoked for each incoming item.</param>
+    /// <param name="maxDegreeOfParallelism">The maximum number of concurrent tasks allowed.</param>
+    /// <returns>A configured target block.</returns>
+    [Obsolete("Use CreateAsyncActionBlock instead. This method has a typo and will be removed in a future release.")]
     ITargetBlock<TInput> CreateAscynActionBlock<TInput>(
         Func<TInput, Task> targetAction,
         int maxDegreeOfParallelism);

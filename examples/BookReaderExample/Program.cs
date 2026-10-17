@@ -5,9 +5,9 @@ using DotnetKit.DataflowBuilder;
 var bookService = new ReaderService();
 
 const string bookUri = "https://www.gutenberg.org/cache/epub/16452/pg16452.txt";
-var target = string.Empty;
 
-var pipeline = DataFlowPipelineBuilder.FromSource<string>()
+var pipeline = DataFlowPipelineBuilder
+    .FromSource<string>()
     .ProcessAsync(bookService.DownloadBookAsync)
     .Process(bookService.CreateWords)
     .Process(bookService.FilterWords)
@@ -18,4 +18,3 @@ var pipeline = DataFlowPipelineBuilder.FromSource<string>()
 await pipeline.SendAsync(bookUri);
 
 await pipeline.CompleteAsync();
-

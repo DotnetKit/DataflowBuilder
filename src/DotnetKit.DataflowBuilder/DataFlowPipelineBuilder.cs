@@ -160,7 +160,7 @@ public class DataFlowPipelineBuilder<TSource1, TSource2> : DataFlowPipelineBuild
 /// Implements a fluent pipeline builder managing a sequence of linked <see cref="IDataflowBlock"/> instances.
 /// </summary>
 /// <typeparam name="TSource">The type of elements accepted by the entry block of the pipeline.</typeparam>
-public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource>
+public class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource>
 {
     /// <summary>
     /// Gets the cancellation token associated with the pipeline.
@@ -299,7 +299,7 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
     /// <param name="targetAction">The asynchronous action executed for each item.</param>
     /// <param name="maxDegreeOfParallelism">The maximum degree of parallel execution.</param>
     /// <returns>A configured action block.</returns>
-    public ITargetBlock<TInput> CreateAscynActionBlock<TInput>(
+    public ITargetBlock<TInput> CreateAsyncActionBlock<TInput>(
         Func<TInput, Task> targetAction,
         int maxDegreeOfParallelism)
     {
@@ -310,6 +310,13 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
             CancellationToken = CancellationToken
         });
     }
+
+    /// <inheritdoc />
+    [Obsolete("Use CreateAsyncActionBlock instead. This method has a typo and will be removed in a future release.")]
+    public ITargetBlock<TInput> CreateAscynActionBlock<TInput>(
+        Func<TInput, Task> targetAction,
+        int maxDegreeOfParallelism)
+        => CreateAsyncActionBlock(targetAction, maxDegreeOfParallelism);
 
     /// <summary>
     /// Creates a synchronous transform block mapping an input item to an output item.
@@ -403,7 +410,7 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
         {
             try
             {
-                await asyncAction(input);
+                await asyncAction(input).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -430,7 +437,7 @@ public partial class DataFlowPipelineBuilder<TSource> : IPipelineBuilder<TSource
         {
             try
             {
-                return await asyncFunction(input);
+                return await asyncFunction(input).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

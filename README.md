@@ -28,22 +28,37 @@ One of the key features of DataflowBuilder is its support for parallel asynchron
 By leveraging dataflow blocks, you can process data concurrently, making efficient use of system resources and improving the performance of your applications.
 This is especially useful for CPU-intensive or I/O-bound operations where tasks can benefit from parallelism.
 
-## Features 
+## Features
 
 - Type-safe fluent builder
 - Process huge streaming datasets effectively with zero memory leaks
 - Implement any asynchronous or synchronous operations (database access, API calls, cloud resource integrations)
+- Time-windowed and size-based micro-batching (`TimeBatchBlock`)
+- Keyed batch grouping (`GroupBlock`)
 - Multi-source extension to implement data streaming joins
 - Extensible: add your own block extensions via `BasePropagatorBlock`
 
-## Implemented blocks
+## Available blocks
 
 - `FromSource<T>` / `FromSources<T1, T2>` => Entry Source Blocks
 - `Process` and `ProcessAsync` => 1-to-1 Transformation blocks (`T` => `T` or `T` => `U`)
 - `ProcessMany` and `ProcessManyAsync` => 1-to-N Expansion blocks (`T` => `IEnumerable<U>`)
-- `Batch` => Batch input elements (`T` => `T[]`)
-- `Group` => Keyed batch grouping (`T` => `T[]`)
+- `Batch` => Size-based or time-windowed batching (`BatchBlock` / `TimeBatchBlock<T>`, `T` => `T[]`)
+- `Group` => Keyed batch grouping (`GroupBlock<TKey, T>`, `T` => `T[]`)
 - `ToTarget` and `ToTargetAsync` => Terminal action consumer blocks
+
+## What You Can Do with DataflowBuilder ?
+
+`DataflowBuilder` turns complex asynchronous streaming, parallel execution, and backpressure coordination into concise, type-safe pipelines:
+
+| Use Case                         | Solution                                                                                         | Real Example                                                                                                                                                                                                                                            |
+| :------------------------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **High-Throughput ETL**          | Filter invalid data, enrich in parallel, batch into chunks, and perform bulk writes.             | `DataFlowPipelineBuilder`<br/>`  .FromSource<RawRecord>()`<br/>`  .Filter(r => r.IsValid)`<br/>`  .ProcessAsync(EnrichAsync, maxDegreeOfParallelism: 8)`<br/>`  .Batch(batchSize: 100)`<br/>`  .ToTargetAsync(BulkInsertAsync)`<br/>`  .Build();`       |
+| **Resilient API Calls**          | Process items asynchronously with retry resilience, delay backoff, and fallback callbacks.       | `DataFlowPipelineBuilder`<br/>`  .FromSource<Order>()`<br/>`  .ProcessAsync(ChargeAsync, maxDegreeOfParallelism: 4, retryCount: 3, retryDelay: TimeSpan.FromSeconds(1), onFailed: LogError)`<br/>`  .ToTargetAsync(SendReceiptAsync)`<br/>`  .Build();` |
+| **Multi-Stream Reconciliation**  | Join two independent streams with `JoinBlock`, pair items into tuples, and detect discrepancies. | `DataFlowPipelineBuilder`<br/>`  .FromSources<Transaction, Ledger>()`<br/>`  .Process(pair => Reconciler.Match(pair.Item1, pair.Item2))`<br/>`  .Filter(diff => !diff.IsBalanced)`<br/>`  .ToTarget(RecordDiscrepancy)`<br/>`  .Build();`               |
+| **Time-Windowed Micro-Batching** | Buffer high-frequency events and flush upon reaching batch capacity OR when timeout expires.     | `DataFlowPipelineBuilder`<br/>`  .FromSource<Metric>()`<br/>`  .Batch(batchSize: 250, timeout: TimeSpan.FromSeconds(5))`<br/>`  .ToTargetAsync(FlushMetricsAsync)`<br/>`  .Build();`                                                                    |
+| **Tenant / Keyed Partitioning**  | Group streaming elements by key and emit individual batches when a key reaches capacity.         | `DataFlowPipelineBuilder`<br/>`  .FromSource<AuditEvent>()`<br/>`  .Group(evt => evt.TenantId, boundedCapacity: 50)`<br/>`  .ToTargetAsync(WriteTenantAuditAsync)`<br/>`  .Build();`                                                                    |
+| **Channel & Stream Ingestion**   | Ingest bounded/unbounded `ChannelReader<T>` or `IAsyncEnumerable<T>` with auto-completion.       | `var pipeline = DataFlowPipelineBuilder`<br/>`  .FromSource<Log>()`<br/>`  .Process(Sanitize)`<br/>`  .ToChannel(writer)`<br/>`  .Build();`<br/>`await pipeline.SendFromChannelAsync(reader);`                                                          |
 
 ## Getting Started
 
@@ -135,7 +150,7 @@ public async Task RunPipeline()
 
 `DataflowBuilder` supports advanced operations like batching and grouping.
 
-#### Batching
+#### Size-Based Batching
 
 ```csharp
 var pipeline = DataFlowPipelineBuilder.FromSource<int>()
@@ -151,6 +166,24 @@ for (int i = 1; i <= 10; i++)
     await pipeline.SendAsync(i);
 }
 
+await pipeline.CompleteAsync();
+```
+
+#### Time-Windowed Batching (TimeBatchBlock)
+
+Buffer streaming events and automatically flush when `batchSize` is reached **OR** when the `timeout` duration expires:
+
+```csharp
+var pipeline = DataFlowPipelineBuilder.FromSource<MetricEvent>()
+    .Batch(batchSize: 100, timeout: TimeSpan.FromSeconds(2))
+    .ToTargetAsync(async batch =>
+    {
+        await metricsClient.SendBatchAsync(batch);
+    })
+    .Build();
+
+await pipeline.SendAsync(new MetricEvent("cpu_load", 0.75));
+// Automatically flushes after 2 seconds even if batchSize has not been reached
 await pipeline.CompleteAsync();
 ```
 
@@ -185,7 +218,7 @@ await pipeline.CompleteAsync();
 
             .Build();
 
-        //Order of sending is important for sources 
+        //Order of sending is important for sources
         await pipeline.Send1Async("HelloWorld");
         await pipeline.Send1Async("PingPong");
 

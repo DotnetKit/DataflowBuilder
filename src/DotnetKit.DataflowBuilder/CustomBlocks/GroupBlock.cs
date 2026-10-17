@@ -14,6 +14,7 @@ public class GroupBlock<TGroupKey, TInput> : BasePropagatorBlock<TInput, TInput[
     private readonly ITargetBlock<TInput> _inputBlock;
     private readonly BufferBlock<TInput[]> _outputBlock;
     private readonly Dictionary<TGroupKey, List<TInput>> _groups = new();
+    private readonly object _syncLock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GroupBlock{TGroupKey, TInput}"/> class.
@@ -37,19 +38,28 @@ public class GroupBlock<TGroupKey, TInput> : BasePropagatorBlock<TInput, TInput[
         _inputBlock = new ActionBlock<TInput>(async (input) =>
         {
             var groupKey = groupingSelector(input);
+            TInput[]? batchToEmit = null;
 
-            if (!_groups.TryGetValue(groupKey, out var list))
+            lock (_syncLock)
             {
-                list = new List<TInput>(boundedCapacity);
-                _groups.Add(groupKey, list);
+                if (!_groups.TryGetValue(groupKey, out var list))
+                {
+                    list = new List<TInput>(boundedCapacity);
+                    _groups.Add(groupKey, list);
+                }
+                list.Add(input);
+
+                if (list.Count >= boundedCapacity)
+                {
+                    batchToEmit = list.ToArray();
+                    list.Clear();
+                    _groups.Remove(groupKey);
+                }
             }
-            list.Add(input);
 
-            if (list.Count >= boundedCapacity)
+            if (batchToEmit != null)
             {
-                await _outputBlock.SendAsync(list.ToArray());
-                list.Clear();
-                _groups.Remove(groupKey);
+                await _outputBlock.SendAsync(batchToEmit).ConfigureAwait(false);
             }
         }, new ExecutionDataflowBlockOptions()
         {
@@ -57,6 +67,64 @@ public class GroupBlock<TGroupKey, TInput> : BasePropagatorBlock<TInput, TInput[
             MaxDegreeOfParallelism = maxDegreeOfParallelism,
             CancellationToken = cancellationToken
         });
+
+        _ = FlushOnCompletionAsync();
+    }
+
+    /// <summary>
+    /// Flushes any buffered groups remaining in the dictionary upon input completion and signals completion downstream.
+    /// </summary>
+    private async Task FlushOnCompletionAsync()
+    {
+        try
+        {
+            await _inputBlock.Completion.ConfigureAwait(false);
+
+            List<TInput[]> remainingBatches;
+            lock (_syncLock)
+            {
+                if (_groups.Count == 0)
+                {
+                    remainingBatches = new List<TInput[]>(0);
+                }
+                else
+                {
+                    remainingBatches = new List<TInput[]>(_groups.Count);
+                    foreach (var (_, list) in _groups)
+                    {
+                        if (list.Count > 0)
+                        {
+                            remainingBatches.Add(list.ToArray());
+                        }
+                    }
+                    _groups.Clear();
+                }
+            }
+
+            foreach (var batch in remainingBatches)
+            {
+                await _outputBlock.SendAsync(batch).ConfigureAwait(false);
+            }
+
+            _outputBlock.Complete();
+        }
+        catch (Exception ex)
+        {
+            ((IDataflowBlock)_outputBlock).Fault(ex);
+        }
+    }
+
+    /// <inheritdoc />
+    public override void Complete()
+    {
+        _inputBlock.Complete();
+    }
+
+    /// <inheritdoc />
+    public override void Fault(Exception exception)
+    {
+        _inputBlock.Fault(exception);
+        ((IDataflowBlock)_outputBlock).Fault(exception);
     }
 
     /// <summary>

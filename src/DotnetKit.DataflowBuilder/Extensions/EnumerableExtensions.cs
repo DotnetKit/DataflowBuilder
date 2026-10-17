@@ -25,6 +25,11 @@ public static class EnumerableExtensions
         if (source == null) throw new ArgumentNullException(nameof(source));
         if (rangeSize <= 0) throw new ArgumentOutOfRangeException(nameof(rangeSize), "Range size must be greater than zero.");
 
+        if (source is ICollection<TSource> { Count: 0 })
+        {
+            yield break;
+        }
+
         using var enumerator = source.GetEnumerator();
         while (enumerator.MoveNext())
         {

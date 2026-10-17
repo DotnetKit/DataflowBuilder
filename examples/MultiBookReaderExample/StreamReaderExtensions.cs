@@ -2,7 +2,7 @@
 
 namespace MultiBookReaderExample
 {
-    public static partial class StreamReaderExtensions
+    public static class StreamReaderExtensions
     {
         public static IEnumerable<string> ReadAllWords(this StreamReader reader)
         {
@@ -12,7 +12,14 @@ namespace MultiBookReaderExample
             {
                 char ch = (char)nextChar;
 
-                if (char.IsWhiteSpace(ch) || char.IsPunctuation(ch) || char.IsControl(ch) || char.IsSymbol(ch) || char.IsSeparator(ch) || char.IsNumber(ch))
+                if (
+                    char.IsWhiteSpace(ch)
+                    || char.IsPunctuation(ch)
+                    || char.IsControl(ch)
+                    || char.IsSymbol(ch)
+                    || char.IsSeparator(ch)
+                    || char.IsNumber(ch)
+                )
                 {
                     if (word.Length > 0)
                     {

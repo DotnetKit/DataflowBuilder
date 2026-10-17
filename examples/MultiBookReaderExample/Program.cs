@@ -1,4 +1,4 @@
-﻿// Compare two books and find the common words between them by using a multisource pipeline (join blocks).
+﻿// Compare two books and find the common words between them by using multisource pipeline (join blocks).
 using System.Diagnostics;
 using DotnetKit.DataflowBuilder;
 using MultiBookReaderExample;

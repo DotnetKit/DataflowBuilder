@@ -16,7 +16,8 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/DotnetKit/DataflowBuilder</PackageProjectUrl>
     <PackageTags>Dataflow, Task Parallel Library, TPL, Builder, Fluent API, Data processing</PackageTags>
-    <isPackable>true</isPackable>
+    <IsPackable>true</IsPackable>
+    <IsPublishable>false</IsPublishable>
     <Company>Evodim</Company>
     <Product>DotnetKit</Product>
     <Authors>Evodim</Authors>

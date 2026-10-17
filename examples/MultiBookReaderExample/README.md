@@ -9,6 +9,17 @@ Based on the concepts from the [Microsoft TPL Dataflow Walkthrough](https://lear
 
 ## Pipeline Workflow
 
+```mermaid
+flowchart TD
+    S1["Send1Async(bookUri1)"] --> Join["FromSources (JoinBlock)"]
+    S2["Send2Async(bookUri2)"] --> Join
+    Join --> Download["ProcessAsync: DownloadBookWordsAsync (TransformBlock)"]
+    Download --> Distinct["Process: HashSet Deduplication (TransformBlock)"]
+    Distinct --> Intersect["Process: Set Intersection (TransformBlock)"]
+    Intersect --> Sort["Process: Alphabetical OrderBy (TransformBlock)"]
+    Sort --> Sink["ToTarget: Console Output (ActionBlock)"]
+```
+
 The multi-source pipeline processes two streams in coordinated stages:
 
 1. **Dual Ingestion (`FromSources<string, string>`)**:

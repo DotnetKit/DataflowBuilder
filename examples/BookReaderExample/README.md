@@ -9,6 +9,16 @@ This sample is an idiomatic `DotnetKit.DataflowBuilder` implementation of the cl
 
 ## Pipeline Workflow
 
+```mermaid
+flowchart TD
+    Input["Input: Book URI (string)"] --> Entry["FromSource (BufferBlock)"]
+    Entry --> Download["ProcessAsync: DownloadBookAsync (TransformBlock)"]
+    Download --> Tokenize["Process: CreateWords (TransformBlock)"]
+    Tokenize --> Filter["Process: FilterWords (TransformBlock)"]
+    Filter --> Match["ProcessMany: FindReversedWords (TransformManyBlock)"]
+    Match --> Sink["ToTarget: PrintReversedWords (ActionBlock)"]
+```
+
 The pipeline orchestrates text downloading, tokenization, filtering, parallel analysis, and display:
 
 1. **Source Ingestion (`FromSource<string>`)**:

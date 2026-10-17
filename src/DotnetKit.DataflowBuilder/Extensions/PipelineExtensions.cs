@@ -1,7 +1,8 @@
 using System.Threading.Channels;
 using DotnetKit.DataflowBuilder.Abstractions;
 
-namespace DotnetKit.DataflowBuilder.Extensions;
+// ReSharper disable once CheckNamespace
+namespace DotnetKit.DataflowBuilder;
 
 /// <summary>
 /// Provides extension methods for ingesting data streams into <see cref="IPipeline{TSource}"/> instances.
@@ -22,10 +23,13 @@ public static class PipelineExtensions
         this IPipeline<TSource> pipeline,
         IAsyncEnumerable<TSource> source,
         bool completeAfterSend = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
-        if (pipeline == null) throw new ArgumentNullException(nameof(pipeline));
-        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (pipeline == null)
+            throw new ArgumentNullException(nameof(pipeline));
+        if (source == null)
+            throw new ArgumentNullException(nameof(source));
 
         await foreach (var item in source.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
@@ -52,10 +56,13 @@ public static class PipelineExtensions
         this IPipeline<TSource> pipeline,
         IEnumerable<TSource> source,
         bool completeAfterSend = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
-        if (pipeline == null) throw new ArgumentNullException(nameof(pipeline));
-        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (pipeline == null)
+            throw new ArgumentNullException(nameof(pipeline));
+        if (source == null)
+            throw new ArgumentNullException(nameof(source));
 
         foreach (var item in source)
         {
@@ -83,10 +90,13 @@ public static class PipelineExtensions
         this IPipeline<TSource> pipeline,
         ChannelReader<TSource> channelReader,
         bool completeAfterSend = true,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
-        if (pipeline == null) throw new ArgumentNullException(nameof(pipeline));
-        if (channelReader == null) throw new ArgumentNullException(nameof(channelReader));
+        if (pipeline == null)
+            throw new ArgumentNullException(nameof(pipeline));
+        if (channelReader == null)
+            throw new ArgumentNullException(nameof(channelReader));
 
         while (await channelReader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
         {

@@ -4,6 +4,7 @@ using DotnetKit.DataflowBuilder.Abstractions;
 using DotnetKit.DataflowBuilder.Core;
 using DotnetKit.DataflowBuilder.CustomBlocks;
 
+// ReSharper disable once CheckNamespace
 namespace DotnetKit.DataflowBuilder;
 
 /// <summary>

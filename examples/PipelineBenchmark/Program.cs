@@ -19,19 +19,22 @@ Console.WriteLine("      -> [Stage 3: Parallel Async Validation (TransformBlock)
 Console.WriteLine("      -> [Stage 4: Dynamic Batcher (BatchBlock, size: 100)]");
 Console.WriteLine("      -> [Stage 5: Terminal Batch Sink (ActionBlock)]");
 Console.WriteLine();
-Console.WriteLine("  Observability via MetricFlow 1.0.55-preview.0.1:");
+Console.WriteLine("  Observability via MetricFlow v1.0.56:");
 Console.WriteLine(
-    "    - Live Dashboard    : Real-time, flicker-free single-line in-place console ticker"
+    "    - Live Ticker       : Real-time, flicker-free single-line in-place console monitor"
 );
 Console.WriteLine("    - Stream Tracking   : Native TrackStream on continuous source stream");
 Console.WriteLine(
-    "    - Latency & Sinks   : Formatted & ANSI colorized output with threshold rules"
+    "    - Table Display     : Correlated multi-stage tabular view with cell-level thresholds"
+);
+Console.WriteLine(
+    "    - Dimension Trees   : Categorical sub-row breakdown of devices and alert distribution"
 );
 Console.WriteLine(
     "    - Throughput        : Real-time velocity (items/sec) across all pipeline stages"
 );
 Console.WriteLine(
-    "    - Memory Tracking   : Current live RAM/Heap & per-stage allocation efficiency"
+    "    - Memory Tracking   : Live RAM/Heap & per-operation allocation efficiency"
 );
 Console.WriteLine(
     "    - Failure Tracking  : Exception vs logical failure tracking via FailureCounter"
@@ -106,22 +109,12 @@ while (!cts.IsCancellationRequested)
     var totalItems = benchmark.TotalItemsProcessed;
     var currentIps = sinkThroughput?.ItemsPerSecond ?? 0;
 
-    // Real-time current memory and per-stage allocation efficiency
     currentProcess.Refresh();
     var currentWorkingSetMb = currentProcess.WorkingSet64 / (1024.0 * 1024.0);
     var currentHeapMb = GC.GetTotalMemory(forceFullCollection: false) / (1024.0 * 1024.0);
 
-    var s1AvgBytes =
-        benchmark.Tracker.GetMemorySnapshot("Stage1_Enrichment")?.AverageAllocatedBytes ?? 0;
-    var s2AvgBytes =
-        benchmark.Tracker.GetMemorySnapshot("Stage2_QualityFilter")?.AverageAllocatedBytes ?? 0;
-    var s3AvgBytes =
-        benchmark.Tracker.GetMemorySnapshot("Stage3_AsyncValidation")?.AverageAllocatedBytes ?? 0;
-    var sinkAvgBytes =
-        benchmark.Tracker.GetMemorySnapshot("Stage4_BatchSink")?.AverageAllocatedBytes ?? 0;
-
     Console.Write(
-        $"\r[Elapsed: {elapsed:mm\\:ss}] Sunk: {totalItems:N0} | Rate: {currentIps:N0}/s | Current RAM: {currentWorkingSetMb:N1} MB (Heap: {currentHeapMb:N1} MB) | Per-Op: [S1:{s1AvgBytes:N0}B S2:{s2AvgBytes:N0}B S3:{s3AvgBytes:N0}B Sink:{sinkAvgBytes:N0}B]    "
+        $"\r[Elapsed: {elapsed:mm\\:ss}] Sunk: {totalItems:N0} | Rate: {currentIps:N0}/s | RAM: {currentWorkingSetMb:N1} MB (Heap: {currentHeapMb:N1} MB)    "
     );
 }
 
@@ -159,20 +152,11 @@ var finalWorkingSetMb = currentProcess.WorkingSet64 / (1024.0 * 1024.0);
 var peakWorkingSetMb = currentProcess.PeakWorkingSet64 / (1024.0 * 1024.0);
 var finalHeapMb = GC.GetTotalMemory(forceFullCollection: false) / (1024.0 * 1024.0);
 
-var s1FinalAvg =
-    benchmark.Tracker.GetMemorySnapshot("Stage1_Enrichment")?.AverageAllocatedBytes ?? 0;
-var s2FinalAvg =
-    benchmark.Tracker.GetMemorySnapshot("Stage2_QualityFilter")?.AverageAllocatedBytes ?? 0;
-var s3FinalAvg =
-    benchmark.Tracker.GetMemorySnapshot("Stage3_AsyncValidation")?.AverageAllocatedBytes ?? 0;
-var sinkFinalAvg =
-    benchmark.Tracker.GetMemorySnapshot("Stage4_BatchSink")?.AverageAllocatedBytes ?? 0;
-
 Console.WriteLine(
     "================================================================================"
 );
 Console.WriteLine(
-    "          FINAL TELEMETRY REPORT (via MetricFlow ConsoleMetricSink)             "
+    "       FINAL PIPELINE TELEMETRY REPORT (via MetricFlow Console Table Mode)      "
 );
 Console.WriteLine(
     "================================================================================"
@@ -197,25 +181,8 @@ var overallRate =
         ? (benchmark.TotalItemsProcessed / stopwatch.Elapsed.TotalSeconds)
         : 0;
 Console.WriteLine($"Overall Sink Rate      : {overallRate:N0} items/sec");
-Console.WriteLine($"Total Processed Items : {benchmark.Tracker.GetTotalItemsProcessed():N0}");
-
-var filterFailure = benchmark.Tracker.GetFailureSnapshot("Stage2_QualityFilter");
-if (filterFailure is not null)
-{
-    Console.WriteLine(
-        $"Quality Filter Rejects : {filterFailure.LogicalFailures:N0} (Total Ops: {filterFailure.TotalOperations:N0})"
-    );
-}
-
 Console.WriteLine($"Current Managed Heap   : {finalHeapMb:F2} MB");
-Console.WriteLine($"Current Working Set    : {finalWorkingSetMb:F2} MB");
-if (peakWorkingSetMb > 0)
-{
-    Console.WriteLine($"Peak Working Set       : {peakWorkingSetMb:F2} MB");
-}
-Console.WriteLine(
-    $"Stage Alloc per Op     : S1_Enrich={s1FinalAvg:N0} B/item, S2_Filter={s2FinalAvg:N0} B/item, S3_Valid={s3FinalAvg:N0} B/item, Sink={sinkFinalAvg:N0} B/batch"
-);
+Console.WriteLine($"Current Working Set    : {finalWorkingSetMb:F2} MB (Peak: {peakWorkingSetMb:F2} MB)");
 Console.WriteLine(
     $"GC Collections         : Gen0={finalGen0:N0}, Gen1={finalGen1:N0}, Gen2={finalGen2:N0}"
 );

@@ -52,9 +52,9 @@ public sealed class BenchmarkPipeline : IDisposable
         })
         .AddConsoleSink(options =>
         {
+            options.DisplayMode = ConsoleDisplayMode.Table;
+            options.ShowDimensionBreakdown = true;
             options.Colorize = true;
-            options.IncludeTimestamp = true;
-            options.Prefix = "[PipelineBenchmark]";
             options.MemoryUnit = MemoryUnit.Auto;
             options.MemoryDecimals = 2;
             options.DurationUnit = DurationUnit.Auto;
@@ -120,7 +120,7 @@ public sealed class BenchmarkPipeline : IDisposable
                 var isValid = enriched.Temperature is >= -40.0 and <= 85.0;
                 if (!isValid)
                 {
-                    scope.SetFailed(true);
+                    scope.SetFailed();
                 }
 
                 return isValid;
@@ -205,17 +205,7 @@ public sealed class BenchmarkPipeline : IDisposable
     }
 
     /// <summary>
-    /// Enables automatic periodic background sink flushes.
-    /// </summary>
-    /// <param name="interval">The flush interval.</param>
-    /// <returns>A disposable token that stops periodic flushes and performs a final flush on disposal.</returns>
-    public IDisposable EnablePeriodicFlush(TimeSpan interval) => _tracker.EnablePeriodicFlush(interval);
-
-    /// <summary>
     /// Disposes the underlying tracker.
     /// </summary>
-    public void Dispose()
-    {
-        _tracker.Dispose();
-    }
+    public void Dispose() => _tracker.Dispose();
 }

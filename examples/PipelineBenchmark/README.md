@@ -34,7 +34,7 @@ This example simulates an infinite data ingestion scenario with natural backpres
   - **Automatic Periodic Flush**: Background scheduled telemetry flushing with shutdown guarantees via `EnablePeriodicFlush`.
   - **Failure Counter**: Distinguishes logical filter rejections from runtime exceptions via `FailureCounter`.
   - **Hierarchy Counter**: Enables nested execution correlation and hierarchical tree snapshots via `HierarchyCounter` and `ShowHierarchicalTree`.
-  - **Memory Tracking**: Cumulative heap allocation calculations via `GetTotalMemoryAllocated()` and per-stage profiling via `MemoryCounter`.
+  - **Memory Tracking**: Real-time current memory monitoring (physical working set and managed heap) alongside per-stage per-operation allocation profiling via `MemoryCounter`.
   - **Throughput & Item Tracking**: Real-time velocity (`items/sec`) and cumulative processed items via `GetTotalItemsProcessed()`.
   - **Dimensional Breakdown**: Categorizes message throughput by `device_id` and computed `alert_status`.
 - **Graceful Shutdown**: When the user presses any key (or sends `Ctrl+C`), the generator stops producing items, remaining in-flight items drain completely through all pipeline stages, and `tracker.FlushSinks()` emits the complete telemetry report.

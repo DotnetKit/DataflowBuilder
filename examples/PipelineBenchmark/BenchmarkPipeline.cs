@@ -60,6 +60,10 @@ public sealed class BenchmarkPipeline : IDisposable
             options.DurationUnit = DurationUnit.Auto;
             options.ThroughputUnit = "items/s";
 
+            // Format MemorySnapshot to display only per-operation allocation metrics, omitting cumulative total allocations
+            options.AddFormatter<MemorySnapshot>(mem =>
+                $"Operations: {mem.OperationCount:N0}, Avg: {mem.AverageAllocatedBytes:N0} B/op (Min: {mem.MinAllocatedBytes:N0} B, Max: {mem.MaxAllocatedBytes:N0} B)");
+
             // Color-code duration thresholds (warning > 5ms, critical > 20ms)
             options.AddThreshold<DurationSnapshot>(
                 warn: TimeSpan.FromMilliseconds(5),

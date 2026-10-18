@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <!-- Build fails on any warning -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Enforce Roslyn code style analyzers in build (including IDE0005) -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Required for Roslyn compiler to analyze unused using directives during build -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Suppress CS1591 (Missing XML comment for publicly visible type or member) across examples and tests -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+</Project>

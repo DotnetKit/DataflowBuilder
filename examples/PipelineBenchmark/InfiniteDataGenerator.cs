@@ -11,7 +11,7 @@ public static class InfiniteDataGenerator
         "sensor-us-west-02",
         "sensor-eu-central-01",
         "sensor-ap-southeast-01",
-        "sensor-edge-gateway-99"
+        "sensor-edge-gateway-99",
     ];
 
     /// <summary>

@@ -1,21 +1,22 @@
-using System.Threading.Tasks.Dataflow;
 using DotnetKit.DataflowBuilder;
 using DotnetKit.DataflowBuilder.Abstractions;
 using DotnetKit.MetricFlow;
+using DotnetKit.MetricFlow.Counters;
+using DotnetKit.MetricFlow.Sinks.Console;
 
-namespace PipelineStabilityExample;
+namespace PipelineBenchmark;
 
 /// <summary>
-/// Encapsulates the stability, memory, and throughput test pipeline orchestrated by DataflowBuilder and instrumented by MetricFlow.
+/// Encapsulates the high-throughput, memory, and stability benchmark pipeline orchestrated by DataflowBuilder and instrumented by MetricFlow.
 /// </summary>
-public sealed class StabilityBenchmarkPipeline : IDisposable
+public sealed class BenchmarkPipeline : IDisposable
 {
     private readonly MetricTracker _tracker;
     private long _totalItemsProcessed;
     private long _totalBatchesProcessed;
 
     /// <summary>
-    /// Gets the MetricFlow tracker capturing performance, duration, memory allocations, and throughput.
+    /// Gets the MetricFlow tracker capturing performance, duration, memory allocations, throughput, and hierarchy.
     /// </summary>
     public MetricTracker Tracker => _tracker;
 
@@ -30,11 +31,11 @@ public sealed class StabilityBenchmarkPipeline : IDisposable
     public long TotalBatchesProcessed => Interlocked.Read(ref _totalBatchesProcessed);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="StabilityBenchmarkPipeline"/> class.
+    /// Initializes a new instance of the <see cref="BenchmarkPipeline"/> class.
     /// </summary>
-    public StabilityBenchmarkPipeline()
+    public BenchmarkPipeline()
     {
-        _tracker = new MetricTracker("DataflowStabilityBenchmark", new Dictionary<string, string>
+        _tracker = new MetricTracker("DataflowPipelineBenchmark", new Dictionary<string, string>
         {
             ["Pipeline"] = "SensorTelemetryProcessing",
             ["Source"] = "InfiniteIEnumerable"
@@ -42,16 +43,32 @@ public sealed class StabilityBenchmarkPipeline : IDisposable
         .AddThroughputCounter()
         .AddMemoryCounter()
         .AddExceptionCounter()
+        .AddFailureCounter()
         .AddDimensionCounter("device_id")
+        .AddDimensionCounter("alert_status", (_, metadata) =>
+        {
+            var isAlert = metadata?.GetValueOrDefault("is_alert") ?? 0;
+            return isAlert == 1 ? "Alert" : "Normal";
+        })
         .AddConsoleSink(options =>
         {
             options.Colorize = true;
             options.IncludeTimestamp = true;
-            options.Prefix = "[MetricFlow]";
-            options.MemoryUnit = DotnetKit.MetricFlow.Sinks.Console.MemoryUnit.Megabytes;
+            options.Prefix = "[PipelineBenchmark]";
+            options.MemoryUnit = MemoryUnit.Megabytes;
             options.MemoryDecimals = 2;
-            options.DurationUnit = DotnetKit.MetricFlow.Sinks.Console.DurationUnit.Auto;
+            options.DurationUnit = DurationUnit.Auto;
             options.ThroughputUnit = "items/s";
+
+            // Color-code duration thresholds (warning > 5ms, critical > 20ms)
+            options.AddThreshold<DurationSnapshot>(
+                warn: TimeSpan.FromMilliseconds(5),
+                critical: TimeSpan.FromMilliseconds(20));
+        })
+        .ConfigureSinkTriggers(triggers =>
+        {
+            triggers.EmitOnFailure = true;
+            triggers.EmitOnSlowDurationThreshold = TimeSpan.FromMilliseconds(50);
         });
     }
 
@@ -79,6 +96,7 @@ public sealed class StabilityBenchmarkPipeline : IDisposable
                 // Approximate meteorological heat index
                 var heatIndex = msg.Temperature + (0.5555 * ((6.11 * Math.Exp(5417.7530 * ((1.0 / 273.16) - (1.0 / (273.15 + msg.Temperature))))) - 10.0));
                 var isAlert = msg.Temperature > 38.0 || msg.Humidity > 80.0;
+                scope.SetMetadata("is_alert", isAlert ? 1 : 0);
 
                 return new EnrichedMessage(
                     SequenceId: msg.SequenceId,
@@ -97,8 +115,15 @@ public sealed class StabilityBenchmarkPipeline : IDisposable
             {
                 using var scope = _tracker.Track("Stage2_QualityFilter");
                 scope.SetItems(1);
+
                 // Sanity check: keep readings in valid sensor range (-40°C to +85°C)
-                return enriched.Temperature is >= -40.0 and <= 85.0;
+                var isValid = enriched.Temperature is >= -40.0 and <= 85.0;
+                if (!isValid)
+                {
+                    scope.SetFailed(true);
+                }
+
+                return isValid;
             })
 
             // Stage 3: Asynchronous Validation (simulating micro-service / I/O latency)
@@ -125,10 +150,10 @@ public sealed class StabilityBenchmarkPipeline : IDisposable
                 using var scope = _tracker.Track("Stage4_BatchSink");
                 scope.SetItems(batch.Length);
 
-                int alertCount = 0;
-                double tempSum = 0;
+                var alertCount = 0;
+                var tempSum = 0.0;
 
-                for (int i = 0; i < batch.Length; i++)
+                for (var i = 0; i < batch.Length; i++)
                 {
                     if (batch[i].IsAlert)
                     {
@@ -146,7 +171,7 @@ public sealed class StabilityBenchmarkPipeline : IDisposable
                 );
 
                 var currentItems = Interlocked.Add(ref _totalItemsProcessed, batch.Length);
-                if (onCheckpoint != null && currentItems % 1_000_000 < batch.Length)
+                if (onCheckpoint is not null && currentItems % 1_000_000 < batch.Length)
                 {
                     onCheckpoint(currentItems);
                 }
@@ -159,10 +184,12 @@ public sealed class StabilityBenchmarkPipeline : IDisposable
             }, maxDegreeOfParallelism: 2)
             .Build();
 
-        // Feed the infinite IEnumerable into the pipeline asynchronously
+        // Feed the infinite IEnumerable into the pipeline asynchronously, monitored by TrackStream
         var producerTask = Task.Run(async () =>
         {
-            var infiniteStream = InfiniteDataGenerator.Generate(generatorCancellationToken);
+            var infiniteStream = InfiniteDataGenerator.Generate(generatorCancellationToken)
+                .TrackStream(_tracker, "InfiniteSourceStream");
+
             try
             {
                 await pipeline.SendAllAsync(infiniteStream, completeAfterSend: false, cancellationToken: generatorCancellationToken)
@@ -176,6 +203,13 @@ public sealed class StabilityBenchmarkPipeline : IDisposable
 
         return (pipeline, producerTask);
     }
+
+    /// <summary>
+    /// Enables automatic periodic background sink flushes.
+    /// </summary>
+    /// <param name="interval">The flush interval.</param>
+    /// <returns>A disposable token that stops periodic flushes and performs a final flush on disposal.</returns>
+    public IDisposable EnablePeriodicFlush(TimeSpan interval) => _tracker.EnablePeriodicFlush(interval);
 
     /// <summary>
     /// Disposes the underlying tracker.

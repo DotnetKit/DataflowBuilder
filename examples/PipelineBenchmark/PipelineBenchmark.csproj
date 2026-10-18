@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DotnetKit.MetricFlow" Version="1.0.54" />
+    <PackageReference Include="DotnetKit.MetricFlow" Version="1.0.55-preview.0.1" />
   </ItemGroup>
 
   <ItemGroup>

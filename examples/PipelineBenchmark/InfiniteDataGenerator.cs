@@ -1,4 +1,4 @@
-namespace PipelineStabilityExample;
+namespace PipelineBenchmark;
 
 /// <summary>
 /// Generates an infinite stream of simulated sensor messages using an <see cref="IEnumerable{SensorMessage}"/>.

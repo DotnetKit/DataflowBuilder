@@ -1,23 +1,27 @@
 using System.Diagnostics;
 using DotnetKit.MetricFlow;
-using PipelineStabilityExample;
+using DotnetKit.MetricFlow.Counters;
+using PipelineBenchmark;
 
 Console.WriteLine("================================================================================");
-Console.WriteLine("    DotnetKit.DataflowBuilder - High-Throughput & Stability Benchmark");
+Console.WriteLine("        DotnetKit.DataflowBuilder - High-Throughput & Pipeline Benchmark        ");
 Console.WriteLine("================================================================================");
 Console.WriteLine("  Architecture:");
-Console.WriteLine("    [Infinite IEnumerable Source] -> [BufferBlock (capacity: 1000)]");
+Console.WriteLine("    [Infinite IEnumerable StreamSource] -> [BufferBlock (capacity: 1000)]");
 Console.WriteLine("      -> [Stage 1: Parallel Enrichment (TransformBlock)]");
 Console.WriteLine("      -> [Stage 2: Sensor Quality Filter (FilterBlock)]");
 Console.WriteLine("      -> [Stage 3: Parallel Async Validation (TransformBlock)]");
 Console.WriteLine("      -> [Stage 4: Dynamic Batcher (BatchBlock, size: 100)]");
 Console.WriteLine("      -> [Stage 5: Terminal Batch Sink (ActionBlock)]");
 Console.WriteLine();
-Console.WriteLine("  Observability via MetricFlow 1.0.54 ConsoleSink:");
-Console.WriteLine("    - Latency      : Min / Max / Average execution durations per stage");
-Console.WriteLine("    - Throughput   : Real-time velocity (items/sec) across pipeline stages");
-Console.WriteLine("    - Memory       : Per-operation allocations & total volume via MemoryCounter");
-Console.WriteLine("    - ConsoleSink  : Formatted & colorized ANSI output directly via MetricFlow");
+Console.WriteLine("  Observability via MetricFlow 1.0.55-preview.0.1 ConsoleSink & Telemetry:");
+Console.WriteLine("    - Stream Tracking   : Native TrackStream on continuous source stream");
+Console.WriteLine("    - Latency & Sinks   : Formatted & ANSI colorized output with threshold rules");
+Console.WriteLine("    - Throughput        : Real-time velocity (items/sec) across all pipeline stages");
+Console.WriteLine("    - Memory Tracking   : Cumulative heap allocations via GetTotalMemoryAllocated()");
+Console.WriteLine("    - Failure Tracking  : Exception vs logical failure tracking via FailureCounter");
+Console.WriteLine("    - Sink Triggers     : Outlier latency (>50ms) and failure-triggered sampling");
+Console.WriteLine("    - Periodic Flush    : Automatic background telemetry flush every 5s");
 Console.WriteLine();
 Console.WriteLine("  Press [ANY KEY] or [Ctrl+C] to stop the pipeline and display results...");
 Console.WriteLine("================================================================================");
@@ -31,7 +35,10 @@ Console.CancelKeyPress += (_, e) =>
     cts.Cancel();
 };
 
-using var benchmark = new StabilityBenchmarkPipeline();
+using var benchmark = new BenchmarkPipeline();
+
+// Enable automatic periodic background sink flushes every 5 seconds (with guaranteed shutdown flush)
+using var periodicFlush = benchmark.EnablePeriodicFlush(TimeSpan.FromSeconds(5));
 
 // Start pipeline, delegating milestone telemetry reporting directly to MetricFlow ConsoleSink
 var (pipeline, producerTask) = benchmark.Start(
@@ -88,8 +95,8 @@ while (!cts.IsCancellationRequested)
     var totalItems = benchmark.TotalItemsProcessed;
     var currentIps = sinkThroughput?.ItemsPerSecond ?? 0;
 
-    // Real-time memory queried from MetricFlow's MemoryCounter
-    var totalAllocatedMb = benchmark.Tracker.GetTotalAllocatedBytes() / (1024.0 * 1024.0);
+    // Real-time cumulative memory and batch sink stats from MetricFlow
+    var totalAllocatedMb = benchmark.Tracker.GetTotalMemoryAllocated() / (1024.0 * 1024.0);
     var sinkMem = benchmark.Tracker.GetMemorySnapshot("Stage4_BatchSink");
     var avgSinkBytes = sinkMem?.AverageAllocatedBytes ?? 0;
 
@@ -133,7 +140,7 @@ var peakWorkingSetMb = currentProcess.PeakWorkingSet64 / (1024.0 * 1024.0);
 Console.WriteLine("================================================================================");
 Console.WriteLine("          FINAL TELEMETRY REPORT (via MetricFlow ConsoleMetricSink)             ");
 Console.WriteLine("================================================================================");
-benchmark.Tracker.FlushSinks();
+periodicFlush.Dispose();
 
 Console.WriteLine();
 Console.WriteLine("================================================================================");
@@ -144,7 +151,15 @@ Console.WriteLine($"Total Items Processed  : {benchmark.TotalItemsProcessed:N0}"
 Console.WriteLine($"Total Batches Sunk     : {benchmark.TotalBatchesProcessed:N0}");
 var overallRate = stopwatch.Elapsed.TotalSeconds > 0 ? (benchmark.TotalItemsProcessed / stopwatch.Elapsed.TotalSeconds) : 0;
 Console.WriteLine($"Overall Sink Rate      : {overallRate:N0} items/sec");
-Console.WriteLine($"MetricFlow Total Alloc : {benchmark.Tracker.GetTotalAllocatedBytes() / (1024.0 * 1024.0):N2} MB");
+Console.WriteLine($"MetricFlow Total Items : {benchmark.Tracker.GetTotalItemsProcessed():N0}");
+Console.WriteLine($"MetricFlow Total Alloc : {benchmark.Tracker.GetTotalMemoryAllocated() / (1024.0 * 1024.0):N2} MB");
+
+var filterFailure = benchmark.Tracker.GetFailureSnapshot("Stage2_QualityFilter");
+if (filterFailure is not null)
+{
+    Console.WriteLine($"Quality Filter Rejects : {filterFailure.LogicalFailures:N0} (Total Ops: {filterFailure.TotalOperations:N0})");
+}
+
 Console.WriteLine($"Current Working Set    : {workingSetMb:F2} MB");
 if (peakWorkingSetMb > 0)
 {

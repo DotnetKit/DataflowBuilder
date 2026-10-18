@@ -1,0 +1,53 @@
+# Top-most EditorConfig file for modern C# .NET with ReSharper & Roslyn analyzers
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+# C# language rules
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_prefer_primary_constructors = true:suggestion
+csharp_style_prefer_collection_expression = when_types_loosely_match:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+
+# Naming conventions
+dotnet_naming_rule.interface_should_be_prefixed_with_i.severity = suggestion
+dotnet_naming_rule.interface_should_be_prefixed_with_i.symbols = interface
+dotnet_naming_rule.interface_should_be_prefixed_with_i.style = prefix_i
+
+dotnet_naming_symbols.interface.applicable_kinds = interface
+dotnet_naming_style.prefix_i.required_prefix = I
+dotnet_naming_style.prefix_i.capitalization = pascal_case
+
+dotnet_naming_rule.private_fields_should_be_camel_case_with_underscore.severity = suggestion
+dotnet_naming_rule.private_fields_should_be_camel_case_with_underscore.symbols = private_field
+dotnet_naming_rule.private_fields_should_be_camel_case_with_underscore.style = prefix_underscore
+
+dotnet_naming_symbols.private_field.applicable_kinds = field
+dotnet_naming_symbols.private_field.applicable_accessibilities = private
+dotnet_naming_style.prefix_underscore.required_prefix = _
+dotnet_naming_style.prefix_underscore.capitalization = camel_case
+
+# Code quality & diagnostics
+dotnet_diagnostic.CA1805.severity = warning      # Do not initialize unnecessarily
+dotnet_diagnostic.CA1851.severity = warning      # Possible multiple enumeration of IEnumerable collection
+dotnet_diagnostic.CA1859.severity = suggestion   # Use concrete types when possible for improved performance
+dotnet_diagnostic.CA2007.severity = suggestion   # Do not directly await a Task without ConfigureAwait
+dotnet_diagnostic.IDE0001.severity = warning     # Simplify names / redundant qualifiers
+dotnet_diagnostic.IDE0005.severity = warning     # Using directive is not required by the code and can be safely removed

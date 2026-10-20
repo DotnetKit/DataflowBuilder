@@ -33,9 +33,7 @@ Console.WriteLine(
 Console.WriteLine(
     "    - Throughput        : Real-time velocity (items/sec) across all pipeline stages"
 );
-Console.WriteLine(
-    "    - Memory Tracking   : Live RAM/Heap & per-operation allocation efficiency"
-);
+Console.WriteLine("    - Memory Tracking   : Live RAM/Heap & per-operation allocation efficiency");
 Console.WriteLine(
     "    - Failure Tracking  : Exception vs logical failure tracking via FailureCounter"
 );
@@ -57,7 +55,8 @@ Console.CancelKeyPress += (_, e) =>
     cts.Cancel();
 };
 
-using var benchmark = new BenchmarkPipeline();
+using var metricTracker = MetricTrackerFactory.CreateMetricTracker();
+using var benchmark = new BenchmarkPipeline(metricTracker);
 
 // Start pipeline
 var (pipeline, producerTask) = benchmark.Start(generatorCancellationToken: cancellationToken);
@@ -182,7 +181,9 @@ var overallRate =
         : 0;
 Console.WriteLine($"Overall Sink Rate      : {overallRate:N0} items/sec");
 Console.WriteLine($"Current Managed Heap   : {finalHeapMb:F2} MB");
-Console.WriteLine($"Current Working Set    : {finalWorkingSetMb:F2} MB (Peak: {peakWorkingSetMb:F2} MB)");
+Console.WriteLine(
+    $"Current Working Set    : {finalWorkingSetMb:F2} MB (Peak: {peakWorkingSetMb:F2} MB)"
+);
 Console.WriteLine(
     $"GC Collections         : Gen0={finalGen0:N0}, Gen1={finalGen1:N0}, Gen2={finalGen2:N0}"
 );

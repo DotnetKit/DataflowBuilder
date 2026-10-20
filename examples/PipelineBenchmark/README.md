@@ -2,6 +2,7 @@
 
 Demonstrates a high-throughput, sustained data pipeline constructed with **DotnetKit.DataflowBuilder** and continuously monitored using **DotnetKit.MetricFlow (1.0.55-preview.0.1)** to assess **performance**, **memory allocations**, **throughput stability**, and **execution hierarchies**.
 
+[MetricFlow Github repository](https://github.com/DotnetKit/MetricFlow)
 ---
 
 ## Architecture Overview

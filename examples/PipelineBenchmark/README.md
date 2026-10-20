@@ -2,6 +2,7 @@
 
 Demonstrates a high-throughput, sustained data pipeline constructed with **DotnetKit.DataflowBuilder** and continuously monitored using **DotnetKit.MetricFlow (1.0.55-preview.0.1)** to assess **performance**, **memory allocations**, **throughput stability**, and **execution hierarchies**.
 
+[MetricFlow Github repository](https://github.com/DotnetKit/MetricFlow)
 ---
 
 ## Architecture Overview
@@ -52,5 +53,9 @@ dotnet run --project examples/PipelineBenchmark -f net8.0
 # Run with .NET 10
 dotnet run --project examples/PipelineBenchmark -f net10.0
 ```
+
+result 
+<img width="1058" height="940" alt="image" src="https://github.com/user-attachments/assets/d6f9cd56-73d7-4fbf-93f4-71927421144d" />
+
 
 Press **any key** or **Ctrl+C** to stop the pipeline and display the comprehensive MetricFlow telemetry summary.

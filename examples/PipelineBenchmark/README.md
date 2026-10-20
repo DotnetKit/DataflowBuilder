@@ -53,4 +53,8 @@ dotnet run --project examples/PipelineBenchmark -f net8.0
 dotnet run --project examples/PipelineBenchmark -f net10.0
 ```
 
+result 
+<img width="1058" height="940" alt="image" src="https://github.com/user-attachments/assets/d6f9cd56-73d7-4fbf-93f4-71927421144d" />
+
+
 Press **any key** or **Ctrl+C** to stop the pipeline and display the comprehensive MetricFlow telemetry summary.
